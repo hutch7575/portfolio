@@ -1,145 +1,87 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Portfolio</title>
+<title>Portfolio Boot</title>
 
 <style>
-:root{
-    --bg:#fff5fa;
-    --card:#ffffff;
-    --accent:#ff7eb6;
-    --accent-dark:#ff5ca3;
-    --text:#2c2c2c;
+body {
+    margin: 0;
+    background: #120014;
+    color: #ff7eb6;
+    font-family: monospace;
+    overflow: hidden;
 }
 
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:Inter, sans-serif;
+#terminal {
+    padding: 40px;
+    white-space: pre-wrap;
+    font-size: 14px;
 }
 
-body{
-    min-height:100vh;
-    background:linear-gradient(
-        180deg,
-        #fff5fa 0%,
-        #ffe4f0 100%
-    );
-    color:var(--text);
+.glow {
+    color: #ff7eb6;
+    text-shadow: 0 0 10px #ff4f9a;
 }
 
-.container{
-    max-width:1200px;
-    margin:auto;
-    padding:60px 20px;
+a {
+    color: #ff9cc8;
+    text-decoration: none;
+}
+a:hover {
+    text-shadow: 0 0 10px #ff7eb6;
 }
 
-.hero{
-    text-align:center;
-    margin-bottom:60px;
+.cursor {
+    display: inline-block;
+    width: 10px;
+    background: #ff7eb6;
+    animation: blink 0.8s infinite;
 }
 
-.hero h1{
-    font-size:4rem;
-    margin-bottom:15px;
-}
-
-.hero p{
-    font-size:1.2rem;
-    opacity:.8;
-}
-
-.gallery-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
-    gap:30px;
-}
-
-.card{
-    background:var(--card);
-    border-radius:24px;
-    overflow:hidden;
-    text-decoration:none;
-    color:inherit;
-    box-shadow:0 10px 30px rgba(0,0,0,.08);
-    transition:.25s;
-}
-
-.card:hover{
-    transform:translateY(-8px);
-    box-shadow:0 20px 40px rgba(255,126,182,.25);
-}
-
-.card-image{
-    height:240px;
-    background:linear-gradient(
-        135deg,
-        var(--accent),
-        #ffc4dd
-    );
-}
-
-.card-content{
-    padding:25px;
-}
-
-.card h2{
-    margin-bottom:10px;
-}
-
-.card p{
-    opacity:.75;
-    line-height:1.5;
-}
-
-.footer{
-    text-align:center;
-    margin-top:60px;
-    opacity:.6;
+@keyframes blink {
+    50% { opacity: 0; }
 }
 </style>
-
 </head>
+
 <body>
 
-<div class="container">
+<div id="terminal"></div>
 
-```
-<section class="hero">
-    <h1>Portfolio</h1>
-    <p>Graphic Design • Illustration • Motion Design</p>
-</section>
+<script>
+const lines = [
+"booting portfolio system...",
+"loading assets ████████",
+"",
+"██████╗  ██████╗ ██████╗ ████████╗ ██████╗ ██████╗ ██╗   ██╗",
+"██╔══██╗██╔═══██╗██╔══██╗╚══██╔══╝██╔═══██╗██╔══██╗██║   ██║",
+"██████╔╝██║   ██║██████╔╝   ██║   ██║   ██║██████╔╝██║   ██║",
+"██╔═══╝ ██║   ██║██╔══██╗   ██║   ██║   ██║██╔══██╗██║   ██║",
+"██║     ╚██████╔╝██║  ██║   ██║   ╚██████╔╝██║  ██║╚██████╔╝",
+"╚═╝      ╚═════╝ ╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝ ╚═════╝",
+"",
+"> welcome, josh.",
+"> initializing gallery modules...",
+"",
+"[1] open image gallery → images.html",
+];
 
-<section class="gallery-grid">
+let i = 0;
+const terminal = document.getElementById("terminal");
 
-    <a href="images.html" class="card">
-        <div class="card-image"></div>
-        <div class="card-content">
-            <h2>Image Gallery</h2>
-            <p>Browse illustrations, graphic design projects, concepts, posters and digital artwork.</p>
-        </div>
-    </a>
+function typeLine() {
+    if (i < lines.length) {
+        terminal.innerHTML += lines[i] + "\n";
+        i++;
+        setTimeout(typeLine, 120);
+    } else {
+        terminal.innerHTML += "\n<a href='images.html'>[ enter gallery ]</a><span class='cursor'></span>";
+    }
+}
 
-    <a href="videos.html" class="card">
-        <div class="card-image"></div>
-        <div class="card-content">
-            <h2>Video Gallery</h2>
-            <p>Explore animations, motion graphics, visual effects and project showcases.</p>
-        </div>
-    </a>
-
-</section>
-
-<div class="footer">
-    © 2026 Portfolio
-</div>
-```
-
-</div>
+typeLine();
+</script>
 
 </body>
 </html>
