@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Portfolio</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d0d0d;
+      --surface: #161616;
+      --border: #222;
+      --text: #e8e8e8;
+      --muted: #666;
+      --accent: #fff;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', 'Helvetica Neue', sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem 3rem;
+      background: rgba(13,13,13,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-name {
+      font-size: 1rem;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      color: var(--accent);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--accent); }
+
+    /* HERO */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 0 3rem;
+      max-width: 900px;
+    }
+
+    .hero-label {
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.5rem, 6vw, 5rem);
+      font-weight: 300;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      color: var(--accent);
+      margin-bottom: 1.5rem;
+    }
+
+    .hero p {
+      font-size: 1.1rem;
+      color: var(--muted);
+      max-width: 480px;
+      line-height: 1.7;
+    }
+
+    /* SECTIONS */
+    section {
+      padding: 6rem 3rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .section-label {
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 3rem;
+    }
+
+    /* GRID */
+    .media-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .media-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      transition: border-color 0.25s, transform 0.25s;
+      cursor: pointer;
+    }
+
+    .media-item:hover {
+      border-color: #444;
+      transform: translateY(-3px);
+    }
+
+    .media-item img,
+    .media-item video {
+      width: 100%;
+      display: block;
+      aspect-ratio: 16/9;
+      object-fit: cover;
+    }
+
+    .media-item .caption {
+      padding: 0.75rem 1rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      letter-spacing: 0.03em;
+    }
+
+    /* EMPTY STATE */
+    .empty-state {
+      border: 1px dashed var(--border);
+      border-radius: 4px;
+      padding: 4rem 2rem;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+    }
+
+    /* LIGHTBOX */
+    .lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(0,0,0,0.92);
+      justify-content: center;
+      align-items: center;
+      padding: 2rem;
+    }
+
+    .lightbox.active { display: flex; }
+
+    .lightbox-inner {
+      position: relative;
+      max-width: 90vw;
+      max-height: 90vh;
+    }
+
+    .lightbox-inner img,
+    .lightbox-inner video {
+      max-width: 90vw;
+      max-height: 85vh;
+      object-fit: contain;
+      border-radius: 2px;
+    }
+
+    .lightbox-close {
+      position: absolute;
+      top: -2.5rem;
+      right: 0;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .lightbox-close:hover { color: var(--accent); }
+
+    /* FOOTER */
+    footer {
+      padding: 3rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    /* LOADING */
+    .loading {
+      color: var(--muted);
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+    }
+
+    @media (max-width: 600px) {
+      nav { padding: 1.25rem 1.5rem; }
+      .hero, section { padding-left: 1.5rem; padding-right: 1.5rem; }
+      footer { padding: 2rem 1.5rem; flex-direction: column; gap: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <span class="nav-name">Your Name</span>
+    <ul class="nav-links">
+      <li><a href="#work">Work</a></li>
+      <li><a href="#video">Video</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+  </nav>
+
+  <div class="hero">
+    <p class="hero-label">Portfolio</p>
+    <h1>Creative<br/>work &amp;<br/>projects.</h1>
+    <p>A placeholder description about who you are and what you do. Edit this to introduce yourself.</p>
+  </div>
+
+  <section id="work">
+    <p class="section-label">Images</p>
+    <div class="media-grid" id="image-grid">
+      <p class="loading">Loading...</p>
+    </div>
+  </section>
+
+  <section id="video">
+    <p class="section-label">Video</p>
+    <div class="media-grid" id="video-grid">
+      <p class="loading">Loading...</p>
+    </div>
+  </section>
+
+  <section id="contact">
+    <p class="section-label">Contact</p>
+    <p style="color: var(--muted); font-size: 1rem;">
+      Get in touch at <a href="mailto:you@example.com" style="color: var(--text); text-decoration: none; border-bottom: 1px solid var(--border);">you@example.com</a>
+    </p>
+  </section>
+
+  <footer>
+    <span>© 2026 Your Name</span>
+    <span>Portfolio</span>
+  </footer>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox">
+    <div class="lightbox-inner">
+      <button class="lightbox-close" id="lightbox-close">✕</button>
+      <div id="lightbox-content"></div>
+    </div>
+  </div>
+
+  <script>
+    const REPO = 'hutch7575/portfolio';
+    const BRANCH = 'main';
+    const API = `https://api.github.com/repos/${REPO}/contents`;
+    const RAW = `https://raw.githubusercontent.com/${REPO}/${BRANCH}`;
+
+    const IMAGE_EXTS = ['jpg','jpeg','png','gif','webp','svg','avif'];
+    const VIDEO_EXTS = ['mp4','webm','mov','ogg'];
+
+    function ext(filename) {
+      return filename.split('.').pop().toLowerCase();
+    }
+
+    async function loadFolder(folder) {
+      try {
+        const res = await fetch(`${API}/${folder}`);
+        if (!res.ok) return [];
+        const files = await res.json();
+        return Array.isArray(files) ? files : [];
+      } catch { return []; }
+    }
+
+    function renderImages(files, container) {
+      const images = files.filter(f => IMAGE_EXTS.includes(ext(f.name)));
+      if (images.length === 0) {
+        container.innerHTML = '<div class="empty-state">Drop images into the <code>images/</code> folder in your repo to display them here.</div>';
+        return;
+      }
+      container.innerHTML = '';
+      images.forEach(file => {
+        const url = `${RAW}/images/${file.name}`;
+        const item = document.createElement('div');
+        item.className = 'media-item';
+        item.innerHTML = `<img src="${url}" alt="${file.name}" loading="lazy"><div class="caption">${file.name}</div>`;
+        item.addEventListener('click', () => openLightbox('img', url));
+        container.appendChild(item);
+      });
+    }
+
+    function renderVideos(files, container) {
+      const videos = files.filter(f => VIDEO_EXTS.includes(ext(f.name)));
+      if (videos.length === 0) {
+        container.innerHTML = '<div class="empty-state">Drop videos into the <code>videos/</code> folder in your repo to display them here.</div>';
+        return;
+      }
+      container.innerHTML = '';
+      videos.forEach(file => {
+        const url = `${RAW}/videos/${file.name}`;
+        const item = document.createElement('div');
+        item.className = 'media-item';
+        item.innerHTML = `<video src="${url}" muted playsinline preload="metadata"></video><div class="caption">${file.name}</div>`;
+        item.addEventListener('click', () => openLightbox('video', url));
+        container.appendChild(item);
+      });
+    }
+
+    function openLightbox(type, src) {
+      const lb = document.getElementById('lightbox');
+      const content = document.getElementById('lightbox-content');
+      if (type === 'img') {
+        content.innerHTML = `<img src="${src}" />`;
+      } else {
+        content.innerHTML = `<video src="${src}" controls autoplay style="max-width:90vw;max-height:85vh;"></video>`;
+      }
+      lb.classList.add('active');
+    }
+
+    document.getElementById('lightbox-close').addEventListener('click', () => {
+      document.getElementById('lightbox').classList.remove('active');
+      document.getElementById('lightbox-content').innerHTML = '';
+    });
+
+    document.getElementById('lightbox').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) {
+        e.currentTarget.classList.remove('active');
+        document.getElementById('lightbox-content').innerHTML = '';
+      }
+    });
+
+    async function init() {
+      const [imageFiles, videoFiles] = await Promise.all([
+        loadFolder('images'),
+        loadFolder('videos')
+      ]);
+      renderImages(imageFiles, document.getElementById('image-grid'));
+      renderVideos(videoFiles, document.getElementById('video-grid'));
+    }
+
+    init();
+  </script>
+</body>
+</html>
