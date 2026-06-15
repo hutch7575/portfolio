@@ -76,14 +76,17 @@ html, body {
   background: var(--wall);
   overflow: hidden;
   transition: background .35s;
+  /* use flex to properly center content */
+  display: flex;
+  flex-direction: column;
 }
 
-/* same subtle texture as gallery */
+/* same texture as gallery */
 #sc-cat::before {
   content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 0;
   background-image:
-    radial-gradient(ellipse at 12% 50%, rgba(0,0,0,.05) 0%, transparent 50%),
-    radial-gradient(ellipse at 88% 50%, rgba(0,0,0,.05) 0%, transparent 50%);
+    radial-gradient(ellipse at 15% 50%, rgba(0,0,0,.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 85% 50%, rgba(0,0,0,.05) 0%, transparent 50%);
 }
 /* same edge fade as gallery */
 #sc-cat::after {
@@ -91,52 +94,58 @@ html, body {
   background: linear-gradient(to right, var(--wall2) 0%, transparent 13%, transparent 87%, var(--wall2) 100%);
 }
 
-/* ambient spotlight — same token as gallery */
+/* ambient spotlight */
 #cat-spot {
   position: absolute; z-index: 1; pointer-events: none;
-  width: 900px; height: 900px; border-radius: 50%;
-  top: 50%; left: 50%;
+  width: min(900px, 80vw); height: min(900px, 80vw);
+  border-radius: 50%;
   background: radial-gradient(circle, var(--light-beam) 0%, var(--light-tint) 35%, transparent 70%);
+  top: 50%; left: 50%;
   transform: translate(-50%, -50%);
   mix-blend-mode: screen;
-  animation: spotDrift 12s ease-in-out infinite alternate;
+  transition: left .8s cubic-bezier(.23,1,.32,1), top .8s cubic-bezier(.23,1,.32,1);
 }
 [data-theme="light"] #cat-spot { mix-blend-mode: multiply; }
-@keyframes spotDrift {
-  0%   { left: 42%; top: 48%; }
-  50%  { left: 55%; top: 52%; }
-  100% { left: 48%; top: 47%; }
-}
 
-/* header strip — same as gallery bar */
+/* header bar */
 #cat-bar {
-  position: absolute; top: 0; left: 0; right: 0; z-index: 10;
+  position: relative; z-index: 10; flex-shrink: 0;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 1.5rem 2.5rem;
-  background: linear-gradient(to bottom, var(--wall) 0%, transparent 100%);
-  transition: background .35s;
+  padding: 1.4rem 2.5rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--wall);
+  transition: background .35s, border-color .35s;
 }
 .cat-bar-logo {
   font-family: 'DM Mono', monospace; font-size: .68rem;
   letter-spacing: .18em; text-transform: uppercase; color: var(--text3);
 }
 
-/* main layout — everything centred on the wall */
-.cat-wall-content {
-  position: absolute; inset: 0; z-index: 3;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 3.5rem;
-  padding: 5rem 2rem 4rem;
+/* main area — fills remaining height, centres content */
+.cat-main {
+  flex: 1; position: relative; z-index: 3;
+  display: flex; align-items: center; justify-content: center;
+  padding: 2.5rem;
+  min-height: 0; /* important for flex children */
 }
 
-/* name plate — mounted on the wall, same mount treatment as pic-mount */
+/* inner layout: name left, cards right on desktop; stacked on mobile */
+.cat-layout {
+  display: flex;
+  align-items: center;
+  gap: 3rem;
+  width: 100%;
+  max-width: 1100px;
+}
+
+/* ── NAME PLATE ── */
+/* Same mount treatment as pic-mount */
 .cat-nameplate {
+  flex: 1.1; min-width: 0;
   background: var(--frame-bg);
-  padding: 2rem 3.5rem;
+  padding: 2.5rem 2.5rem 3.5rem;
   box-shadow: 0 20px 60px var(--shadow), 0 4px 16px rgba(0,0,0,.3), 0 0 0 1px var(--border);
   position: relative;
-  text-align: center;
   transition: background .35s, box-shadow .35s;
 }
 .cat-nameplate::after {
@@ -147,28 +156,26 @@ html, body {
 
 .cat-nameplate-eyebrow {
   font-family: 'DM Mono', monospace; font-size: .6rem;
-  letter-spacing: .25em; text-transform: uppercase;
-  color: var(--pink); margin-bottom: .75rem; display: block;
+  letter-spacing: .22em; text-transform: uppercase;
+  color: var(--pink); display: block; margin-bottom: .9rem;
 }
 .cat-nameplate-name {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: clamp(3.5rem, 8vw, 8rem);
-  letter-spacing: .04em; line-height: .88;
+  font-size: clamp(3rem, 6vw, 7rem);
+  letter-spacing: .02em; line-height: .88;
   color: var(--text); display: block;
 }
 .cat-nameplate-name span { color: var(--pink); }
 .cat-nameplate-sub {
-  display: block; margin-top: .9rem;
-  font-size: .78rem; color: var(--text3);
-  font-weight: 300; letter-spacing: .02em;
-  line-height: 1.6;
+  display: block; margin-top: 1rem;
+  font-size: .8rem; color: var(--text3);
+  font-weight: 300; letter-spacing: .03em; line-height: 1.7;
 }
-
-/* nameplate label strip — identical to pic-mount-label */
+/* label strip — identical to pic-mount-label */
 .cat-nameplate-label {
-  position: absolute; bottom: 0; left: 0; right: 0; height: 40px;
+  position: absolute; bottom: 0; left: 0; right: 0; height: 42px;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0 1.25rem; border-top: 1px solid var(--border);
+  padding: 0 1.4rem; border-top: 1px solid var(--border);
 }
 .cat-nameplate-label span {
   font-family: 'DM Mono', monospace; font-size: .55rem;
@@ -176,23 +183,24 @@ html, body {
 }
 .cat-nameplate-label .dot { color: var(--pink); }
 
-/* category cards row — same mount style */
+/* ── CATEGORY CARDS ── */
 .cat-cards {
-  display: flex; gap: 2.5rem; align-items: stretch;
+  display: flex; flex-direction: column;
+  gap: 1.5rem; flex: 1; min-width: 0;
 }
 
+/* each card = same mount as pic-mount */
 .cat-card {
   position: relative; overflow: hidden;
   background: var(--frame-bg);
-  box-shadow: 0 20px 60px var(--shadow), 0 4px 16px rgba(0,0,0,.3), 0 0 0 1px var(--border);
-  width: clamp(200px, 22vw, 320px);
-  display: flex; flex-direction: column;
-  transition: background .35s, box-shadow .4s, transform .4s cubic-bezier(.16,1,.3,1);
-  cursor: pointer;
+  box-shadow: 0 16px 50px var(--shadow), 0 3px 12px rgba(0,0,0,.3), 0 0 0 1px var(--border);
+  display: flex; align-items: stretch;
+  transition: background .35s, transform .35s cubic-bezier(.16,1,.3,1), box-shadow .35s;
+  cursor: pointer; min-height: 110px;
 }
 .cat-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 32px 80px var(--shadow), 0 8px 24px rgba(0,0,0,.35), 0 0 0 1px var(--border);
+  transform: translateY(-4px);
+  box-shadow: 0 28px 70px var(--shadow), 0 6px 20px rgba(0,0,0,.35), 0 0 0 1px var(--border);
 }
 .cat-card::after {
   content: ''; position: absolute; inset: 0; pointer-events: none;
@@ -200,50 +208,62 @@ html, body {
 }
 [data-theme="light"] .cat-card::after { box-shadow: inset 0 1px 0 rgba(255,255,255,.5); }
 
-/* preview image fills card */
+/* preview strip on the left */
 .cat-card-preview {
-  flex: 1; min-height: 180px;
+  width: 110px; flex-shrink: 0;
   background-size: cover; background-position: center;
-  filter: brightness(.55) saturate(.4);
-  transition: filter .5s;
-  position: relative;
+  filter: brightness(.5) saturate(.35);
+  transition: filter .45s;
+  border-right: 1px solid var(--border);
 }
 .cat-card-preview.no-preview {
-  background: var(--wall3);
+  background: var(--wall3); filter: none;
   display: flex; align-items: center; justify-content: center;
-  filter: none;
 }
 .cat-card-preview.no-preview::after {
   content: '—'; font-family: 'DM Mono', monospace;
-  font-size: 1.5rem; color: var(--text3); letter-spacing: .2em;
+  font-size: 1rem; color: var(--text3); letter-spacing: .2em;
 }
-.cat-card:hover .cat-card-preview { filter: brightness(.75) saturate(.6); }
+.cat-card:hover .cat-card-preview { filter: brightness(.7) saturate(.55); }
 
-/* bottom label strip — identical to pic-mount-label */
-.cat-card-label {
-  height: 54px; display: flex; flex-direction: column;
-  justify-content: center; padding: 0 1.1rem;
-  border-top: 1px solid var(--border); gap: .2rem;
-  flex-shrink: 0;
+/* text content */
+.cat-card-body {
+  flex: 1; display: flex; flex-direction: column;
+  justify-content: center; padding: 1.25rem 1.5rem; gap: .3rem;
+}
+.cat-card-index {
+  font-family: 'DM Mono', monospace; font-size: .58rem;
+  letter-spacing: .18em; text-transform: uppercase; color: var(--pink);
 }
 .cat-card-title {
-  font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem;
-  letter-spacing: .08em; color: var(--text);
-  transition: color .25s; line-height: 1;
+  font-family: 'Bebas Neue', sans-serif; font-size: 2rem;
+  letter-spacing: .06em; line-height: 1; color: var(--text);
+  transition: color .25s;
 }
 .cat-card:hover .cat-card-title { color: var(--pink); }
 .cat-card-count {
   font-family: 'DM Mono', monospace; font-size: .55rem;
-  letter-spacing: .1em; color: var(--text3); text-transform: uppercase;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--text3);
+  margin-top: .15rem;
 }
 
-/* footer — identical to gallery style */
+/* arrow */
+.cat-card-arrow {
+  align-self: center; padding-right: 1.5rem;
+  font-size: 1.1rem; color: var(--pink);
+  opacity: 0; transform: translateX(-5px);
+  transition: opacity .25s, transform .25s;
+}
+.cat-card:hover .cat-card-arrow { opacity: 1; transform: translateX(0); }
+
+/* footer */
 #cat-footer {
-  position: absolute; bottom: 0; left: 0; right: 0; z-index: 10;
+  position: relative; z-index: 10; flex-shrink: 0;
   display: flex; justify-content: space-between; align-items: center;
   padding: .85rem 2.5rem;
-  background: linear-gradient(to top, var(--wall) 0%, transparent 100%);
-  transition: background .35s;
+  border-top: 1px solid var(--border);
+  background: var(--wall);
+  transition: background .35s, border-color .35s;
 }
 .cat-footer-l, .cat-footer-r {
   font-family: 'DM Mono', monospace; font-size: .56rem;
@@ -251,7 +271,6 @@ html, body {
 }
 .cat-footer-r span { color: var(--pink); }
 
-/* theme toggle */
 #theme-toggle {
   background: none; border: 1px solid var(--border);
   border-radius: 20px; padding: .28rem .7rem;
@@ -262,12 +281,27 @@ html, body {
 }
 #theme-toggle:hover { color: var(--text); border-color: var(--text3); }
 
-/* responsive */
-@media (max-width: 600px) {
-  .cat-cards { flex-direction: column; gap: 1.5rem; align-items: center; }
-  .cat-card { width: min(85vw, 320px); }
-  .cat-nameplate { padding: 1.5rem 2rem 3rem; }
-  #cat-bar, #cat-footer { padding: 1rem 1.5rem; }
+/* ── RESPONSIVE ── */
+/* tablet */
+@media (max-width: 860px) {
+  .cat-layout { flex-direction: column; gap: 2rem; align-items: stretch; }
+  .cat-nameplate { padding: 2rem 2rem 3rem; }
+  .cat-nameplate-name { font-size: clamp(2.8rem, 8vw, 5rem); }
+  .cat-cards { flex-direction: row; }
+  .cat-card { flex-direction: column; min-height: auto; }
+  .cat-card-preview { width: auto; height: 80px; border-right: none; border-bottom: 1px solid var(--border); }
+  .cat-card-arrow { display: none; }
+}
+/* mobile */
+@media (max-width: 540px) {
+  .cat-main { padding: 1.25rem; }
+  .cat-layout { gap: 1.25rem; }
+  .cat-cards { flex-direction: column; gap: 1rem; }
+  .cat-nameplate { padding: 1.5rem 1.5rem 2.75rem; }
+  #cat-bar { padding: 1rem 1.25rem; }
+  #cat-footer { padding: .75rem 1.25rem; flex-direction: column; gap: .5rem; align-items: flex-start; }
+  .cat-card-preview { width: 80px; height: auto; }
+  .cat-card-preview.no-preview { height: 80px; }
 }
 
 /* ── 4. IMAGE GALLERY ── */
