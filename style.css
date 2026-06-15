@@ -568,3 +568,28 @@ html, body {
 .vid-frame.lifting .vid-mount {
   box-shadow: 0 40px 120px var(--shadow), 0 12px 40px rgba(0,0,0,.4), 0 0 0 1px var(--border);
 }
+
+/* ── MOBILE: prevent long-press save/context menu ── */
+img, video {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  pointer-events: none; /* images handled via parent frame */
+}
+.pic-frame, .vid-frame, #gal-wall, #vid-wall {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+/* Re-enable pointer events on frames themselves */
+.pic-frame img, .vid-frame video {
+  pointer-events: none;
+}
+/* touch-action: pan-x allows horizontal swipe but blocks vertical scroll conflicts */
+#gal-wall, #vid-wall {
+  touch-action: pan-y pinch-zoom;
+}
+#sc-gallery, #sc-tv {
+  touch-action: pan-y;
+  overflow: hidden;
+}
