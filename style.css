@@ -103,7 +103,7 @@ html, body {
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
   mix-blend-mode: screen;
-  transition: left .8s cubic-bezier(.23,1,.32,1), top .8s cubic-bezier(.23,1,.32,1);
+  /* no transition — spotlight is static */
 }
 [data-theme="light"] #cat-spot { mix-blend-mode: multiply; }
 
