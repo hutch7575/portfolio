@@ -574,40 +574,4 @@ loadData().then(() => {
 /* ═══════════════════════════════
    DEVTOOLS DETECTION
 ═══════════════════════════════ */
-(function() {
-  // Skip entirely on touch/mobile devices —
-  // mobile browser chrome (address bar, bottom nav) naturally inflates
-  // outerHeight vs innerHeight and would cause constant false positives.
-  const isMobile = navigator.maxTouchPoints > 0
-    || /Mobi|Android|iPhone|iPad|iPod|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  if (isMobile) return;
 
-  // On desktop, docked devtools panels push inner dimensions down significantly.
-  // Use a large threshold (300px) to avoid false positives from OS chrome.
-  // Require two consecutive positive checks before triggering.
-  let strikes = 0;
-
-  function check() {
-    const wDiff = window.outerWidth  - window.innerWidth;
-    const hDiff = window.outerHeight - window.innerHeight;
-    const suspicious = wDiff > 300 || hDiff > 300;
-
-    if (suspicious) {
-      strikes++;
-      if (strikes >= 2) {
-        const overlay = document.getElementById('devtools-overlay');
-        if (overlay && !overlay.classList.contains('show')) {
-          overlay.classList.add('show');
-          setTimeout(() => {
-            sessionStorage.removeItem('jw_screen');
-            window.location.reload();
-          }, 2200);
-        }
-      }
-    } else {
-      strikes = 0;
-    }
-  }
-
-  setInterval(check, 1500);
-})();
