@@ -23,52 +23,25 @@
       background: var(--bg);
       color: var(--text);
       font-family: 'Space Grotesk', sans-serif;
+      cursor: none;
     }
 
-    /* ── CURSOR: real arrow shape but animated ── */
-    * { cursor: none !important; }
-
+    /* ── CURSOR: arrow SVG, no ring, just scale on hover ── */
     #cursor {
-      position: fixed;
-      z-index: 9999;
-      pointer-events: none;
+      position: fixed; z-index: 9999; pointer-events: none;
       top: 0; left: 0;
-      width: 20px; height: 20px;
-      /* CSS arrow cursor shape */
-      transform: translate(0, 0);
-      transition: transform .05s linear;
+      transition: transform .18s cubic-bezier(.16,1,.3,1);
     }
-
     #cursor svg {
-      width: 20px; height: 20px;
-      filter: drop-shadow(0 1px 3px rgba(0,0,0,.8));
-      transition: transform .15s cubic-bezier(.16,1,.3,1);
+      width: 22px; height: 22px;
+      filter: drop-shadow(0 1px 4px rgba(0,0,0,.9));
     }
-
-    #cursor.hovering svg {
-      transform: scale(1.15);
-    }
-
-    /* trailing ring that lags behind */
-    #cursor-trail {
-      position: fixed;
-      z-index: 9997;
-      pointer-events: none;
-      width: 28px; height: 28px;
-      border: 1.5px solid rgba(255,45,120,.5);
-      border-radius: 50%;
-      transform: translate(-50%, -50%);
-      transition: border-color .2s;
-    }
-    #cursor.hovering ~ #cursor-trail {
-      border-color: rgba(255,45,120,.9);
-      width: 44px; height: 44px;
-    }
+    #cursor.hovering { transform: scale(1.35); }
+    #cursor.clicking { transform: scale(.88); }
 
     /* ── NOISE ── */
     body::after {
-      content:''; position:fixed; inset:0; z-index:9990;
-      pointer-events:none; opacity:.025;
+      content:''; position:fixed; inset:0; z-index:9990; pointer-events:none; opacity:.025;
       background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
       background-size:128px;
     }
@@ -86,15 +59,14 @@
     .landing-nav {
       position: absolute; top:0; left:0; right:0;
       padding: 2rem 3rem;
-      display: flex; justify-content:space-between; align-items:center;
-      z-index: 2;
+      display: flex; justify-content:space-between; align-items:center; z-index:2;
     }
     .landing-logo {
-      font-family: 'DM Mono', monospace; font-size:.8rem;
+      font-family:'DM Mono',monospace; font-size:.8rem;
       letter-spacing:.12em; text-transform:uppercase; color:var(--text);
     }
     .landing-hint {
-      font-family: 'DM Mono', monospace; font-size:.65rem;
+      font-family:'DM Mono',monospace; font-size:.65rem;
       letter-spacing:.15em; text-transform:uppercase; color:var(--muted);
     }
 
@@ -103,8 +75,7 @@
     .landing-card {
       flex:1; position:relative;
       display:flex; align-items:flex-end; padding:3rem;
-      overflow:hidden;
-      transition: flex .55s cubic-bezier(.16,1,.3,1);
+      overflow:hidden; transition:flex .55s cubic-bezier(.16,1,.3,1);
     }
     .landing-card:hover { flex:1.22; }
 
@@ -122,28 +93,25 @@
     .card-bg {
       position:absolute; inset:-8%;
       background-size:cover; background-position:center;
-      transition: filter .5s, transform .55s cubic-bezier(.16,1,.3,1);
+      transition:filter .5s, transform .55s cubic-bezier(.16,1,.3,1);
     }
-    .card-bg-gradient-a {
+    .card-bg-a {
       background:
         radial-gradient(ellipse at 30% 65%, rgba(255,45,120,.18) 0%, transparent 65%),
-        radial-gradient(ellipse at 75% 20%, rgba(80,0,30,.14) 0%, transparent 60%),
-        var(--bg);
+        radial-gradient(ellipse at 75% 20%, rgba(80,0,30,.14) 0%, transparent 60%), var(--bg);
     }
-    .card-bg-gradient-b {
+    .card-bg-b {
       background:
         radial-gradient(ellipse at 70% 45%, rgba(255,45,120,.13) 0%, transparent 65%),
-        radial-gradient(ellipse at 20% 75%, rgba(0,10,30,.14) 0%, transparent 60%),
-        var(--bg);
+        radial-gradient(ellipse at 20% 75%, rgba(0,10,30,.14) 0%, transparent 60%), var(--bg);
     }
     .card-bg-photo { filter:brightness(.18) saturate(.35); }
-    .landing-card:hover .card-bg-photo { filter:brightness(.28) saturate(.55); transform:scale(1.05) translateY(-1%); }
+    .landing-card:hover .card-bg-photo { filter:brightness(.3) saturate(.55); transform:scale(1.05); }
 
     .card-vignette {
       position:absolute; inset:0; z-index:1;
       background:linear-gradient(to top, rgba(8,8,8,.88) 0%, rgba(8,8,8,.05) 55%);
     }
-
     .card-content { position:relative; z-index:2; display:flex; flex-direction:column; gap:.55rem; }
 
     .card-label {
@@ -155,7 +123,7 @@
     .landing-card:nth-child(3) .card-label { animation-delay:.5s; }
 
     .card-title {
-      font-size:clamp(2.6rem,5.5vw,6rem); font-weight:700;
+      font-size:clamp(2.8rem,5.5vw,6rem); font-weight:700;
       letter-spacing:-.04em; line-height:.88; color:var(--text);
       opacity:0; transform:translateY(22px); animation:fadeUp .6s forwards;
       transition:color .3s;
@@ -184,25 +152,21 @@
     #gallery {
       position:fixed; inset:0; z-index:5;
       opacity:0; pointer-events:none;
-      transition:opacity .45s;
-      background:var(--bg);
+      transition:opacity .45s; background:var(--bg);
     }
     #gallery.active { opacity:1; pointer-events:all; }
 
-    /* top bar */
     #gallery-bar {
       position:fixed; top:0; left:0; right:0; z-index:200;
       display:flex; align-items:center; justify-content:space-between;
       padding:1.75rem 2.5rem;
-      background:linear-gradient(to bottom, rgba(8,8,8,.9) 0%, transparent 100%);
+      background:linear-gradient(to bottom, rgba(8,8,8,.92) 0%, transparent 100%);
     }
     #back-btn {
       background:none; border:none;
       font-family:'DM Mono',monospace; font-size:.7rem;
       letter-spacing:.14em; text-transform:uppercase;
-      color:var(--muted);
-      display:flex; align-items:center; gap:.6rem;
-      transition:color .2s; padding:0;
+      color:var(--muted); display:flex; align-items:center; gap:.6rem; transition:color .2s; padding:0;
     }
     #back-btn:hover { color:var(--text); }
     #back-btn .arrow { display:inline-block; transition:transform .2s; }
@@ -217,76 +181,80 @@
       letter-spacing:.1em; color:var(--muted); min-width:4rem; text-align:right;
     }
 
-    /* ── SLIDE AREA ── */
-    #carousel-viewport {
-      position:absolute; inset:0; overflow:hidden;
-    }
+    /* ── CAROUSEL ── */
+    #carousel-viewport { position:absolute; inset:0; overflow:hidden; }
     #carousel {
       position:absolute; top:0; left:0; height:100%;
-      display:flex;
-      will-change:transform;
+      display:flex; will-change:transform;
     }
 
     .slide {
-      position:relative;
-      width:100vw; height:100vh;
-      flex-shrink:0;
-      display:flex; align-items:center; justify-content:center;
+      position:relative; width:100vw; height:100vh;
+      flex-shrink:0; display:flex; align-items:center; justify-content:center;
       overflow:hidden;
     }
 
-    /* ── EDGE BLEED CANVASES ── */
-    /* left and right canvases sample edge pixels and fade out */
-    .slide-bleed-left,
-    .slide-bleed-right {
+    /* blurred bg — just the image blurred and darkened, fills whole slide */
+    .slide-blur-bg {
+      position:absolute; inset:-12%; z-index:0;
+      background-size:cover; background-position:center;
+      filter:blur(35px) brightness(.22) saturate(.4);
+      transform:scale(1.05);
+    }
+
+    /* left/right gradient bleeds — colour baked in via inline style */
+    .slide-bleed {
       position:absolute; top:0; bottom:0; z-index:1;
-      width:220px; pointer-events:none;
+      width:30%; pointer-events:none;
     }
     .slide-bleed-left  { left:0; }
     .slide-bleed-right { right:0; }
 
-    /* top/bottom dark fade */
+    /* top/bottom fade */
     .slide-vignette {
       position:absolute; inset:0; z-index:2; pointer-events:none;
       background:
-        linear-gradient(to bottom, rgba(8,8,8,.65) 0%, transparent 14%, transparent 86%, rgba(8,8,8,.65) 100%);
+        linear-gradient(to bottom,
+          rgba(8,8,8,.72) 0%,
+          transparent 16%,
+          transparent 84%,
+          rgba(8,8,8,.72) 100%);
     }
 
-    /* media — fully visible, contained */
+    /* the actual image — fully visible, contained */
     .slide-media-wrap {
       position:relative; z-index:3;
       display:flex; align-items:center; justify-content:center;
       width:100%; height:100%;
-      padding:5.5rem 7rem 4.5rem;
+      padding:5.5rem 8rem 5rem;
     }
 
     .slide-media-wrap img,
     .slide-media-wrap video {
       max-width:100%; max-height:100%;
       width:auto; height:auto;
-      object-fit:contain;
-      display:block;
-      border-radius:3px;
-      box-shadow:0 24px 70px rgba(0,0,0,.75), 0 2px 8px rgba(0,0,0,.5);
+      object-fit:contain; display:block;
+      border-radius:2px;
+      box-shadow:0 28px 80px rgba(0,0,0,.8), 0 4px 12px rgba(0,0,0,.5);
       will-change:transform;
+      transition:transform .08s linear;
     }
 
     /* filename */
     .slide-info {
-      position:absolute; bottom:2rem; left:2.5rem; z-index:4;
+      position:absolute; bottom:2.25rem; left:2.5rem; z-index:4;
       opacity:0; transform:translateY(5px);
       transition:opacity .35s, transform .35s;
     }
     .slide-info.peek { opacity:1; transform:none; }
     .slide-name {
       font-family:'DM Mono',monospace; font-size:.6rem;
-      letter-spacing:.1em; color:rgba(240,237,230,.45);
+      letter-spacing:.1em; color:rgba(240,237,230,.4);
     }
 
     /* nav arrows */
     .gallery-nav {
-      position:fixed; top:50%; z-index:200;
-      transform:translateY(-50%);
+      position:fixed; top:50%; z-index:200; transform:translateY(-50%);
       background:none; border:none; color:var(--muted);
       font-size:2rem; padding:1.25rem;
       transition:color .2s, transform .2s; line-height:1;
@@ -313,12 +281,10 @@
 
     .thumb {
       width:38px; height:38px; border-radius:2px; overflow:hidden;
-      opacity:.28; transition:opacity .2s, transform .2s, outline .1s;
+      opacity:.28; transition:opacity .2s, transform .2s;
       flex-shrink:0;
     }
-    .thumb img, .thumb video {
-      width:100%; height:100%; object-fit:cover; pointer-events:none; display:block;
-    }
+    .thumb img, .thumb video { width:100%; height:100%; object-fit:cover; pointer-events:none; display:block; }
     .thumb.active { opacity:1; transform:scale(1.28); outline:1.5px solid var(--accent); outline-offset:2px; }
     .thumb:not(.active):hover { opacity:.55; }
 
@@ -337,12 +303,11 @@
     @media (max-width:640px) {
       .landing-split { flex-direction:column; }
       .card-divider { width:100%; height:1px; }
-      .card-divider::after { width:60px; height:1px; top:50%; left:50%; }
       .landing-card { padding:2rem; }
       .landing-nav { padding:1.25rem 1.5rem; }
-      .slide-media-wrap { padding:4.5rem 1.25rem 4rem; }
-      .slide-bleed-left, .slide-bleed-right { width:80px; }
+      .slide-media-wrap { padding:4.5rem 1.5rem 4rem; }
       #gallery-bar { padding:1.25rem 1.5rem; }
+      .slide-bleed { width:15%; }
     }
 
     @media (prefers-reduced-motion:reduce) {
@@ -352,13 +317,12 @@
 </head>
 <body>
 
-  <!-- custom cursor: real arrow SVG + trailing ring -->
   <div id="cursor">
-    <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M3 2L17 10L10.5 11.5L7.5 18L3 2Z" fill="white" stroke="#222" stroke-width="1" stroke-linejoin="round"/>
+    <svg viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M4 2.5L18.5 10.5L11.5 12.2L8.2 19.5L4 2.5Z"
+            fill="white" stroke="#111" stroke-width="1.2" stroke-linejoin="round"/>
     </svg>
   </div>
-  <div id="cursor-trail"></div>
 
   <!-- LANDING -->
   <div id="landing">
@@ -368,7 +332,7 @@
     </div>
     <div class="landing-split">
       <div class="landing-card" id="card-images">
-        <div class="card-bg card-bg-gradient-a" id="card-bg-images"></div>
+        <div class="card-bg card-bg-a" id="card-bg-images"></div>
         <div class="card-vignette"></div>
         <div class="card-content">
           <span class="card-label">Category 01</span>
@@ -379,7 +343,7 @@
       </div>
       <div class="card-divider"></div>
       <div class="landing-card" id="card-videos">
-        <div class="card-bg card-bg-gradient-b" id="card-bg-videos"></div>
+        <div class="card-bg card-bg-b" id="card-bg-videos"></div>
         <div class="card-vignette"></div>
         <div class="card-content">
           <span class="card-label">Category 02</span>
@@ -421,99 +385,29 @@
   const VID_EXT = ['mp4','webm','mov','ogg'];
   const getExt  = f => f.split('.').pop().toLowerCase();
 
+  /* pre-sampled edge colours (baked at build time) */
+  const EDGE_COLORS = {
+    "fop1.jpg":            { left:"rgb(185,185,185)", right:"rgb(187,188,188)" },
+    "fop2.jpg":            { left:"rgb(176,173,165)", right:"rgb(192,194,192)" },
+    "pouch_design.png":    { left:"rgb(77,76,75)",    right:"rgb(68,68,66)"   },
+    "pouch_design2.png":   { left:"rgb(77,76,75)",    right:"rgb(68,68,66)"   },
+    "publication_final.png":{ left:"rgb(80,169,198)", right:"rgb(80,171,200)" }
+  };
+
   /* ── CURSOR ── */
-  const cur   = document.getElementById('cursor');
-  const trail = document.getElementById('cursor-trail');
-  let mx=0, my=0, tx=0, ty=0;
-
+  const cur = document.getElementById('cursor');
+  let cx=0, cy=0;
   document.addEventListener('mousemove', e => {
-    mx = e.clientX; my = e.clientY;
-    cur.style.left = mx + 'px';
-    cur.style.top  = my + 'px';
+    cx=e.clientX; cy=e.clientY;
+    cur.style.left = cx+'px';
+    cur.style.top  = cy+'px';
   });
-
-  (function animTrail() {
-    tx += (mx - tx) * 0.13;
-    ty += (my - ty) * 0.13;
-    trail.style.left = tx + 'px';
-    trail.style.top  = ty + 'px';
-    requestAnimationFrame(animTrail);
-  })();
-
   document.addEventListener('mouseover', e => {
     const h = !!e.target.closest('.landing-card, button, .thumb');
     cur.classList.toggle('hovering', h);
   });
-
-  /* ── EDGE BLEED ── */
-  // For each slide, we draw left/right canvases that sample the image's edge columns
-  // and paint them with a gradient fade to --bg
-  function buildBleed(imgEl, slideEl) {
-    const leftCanvas  = slideEl.querySelector('.slide-bleed-left');
-    const rightCanvas = slideEl.querySelector('.slide-bleed-right');
-    if (!leftCanvas || !rightCanvas) return;
-
-    // wait until image is loaded and laid out
-    function draw() {
-      try {
-        const offscreen = document.createElement('canvas');
-        offscreen.width  = imgEl.naturalWidth  || imgEl.videoWidth  || 400;
-        offscreen.height = imgEl.naturalHeight || imgEl.videoHeight || 300;
-        const ctx = offscreen.getContext('2d');
-        ctx.drawImage(imgEl, 0, 0, offscreen.width, offscreen.height);
-
-        // sample left edge: average colour of leftmost 6px column
-        const lData = ctx.getImageData(0, 0, 6, offscreen.height);
-        const lColor = avgColor(lData.data);
-
-        // sample right edge: rightmost 6px
-        const rData = ctx.getImageData(offscreen.width - 6, 0, 6, offscreen.height);
-        const rColor = avgColor(rData.data);
-
-        // paint left canvas: solid lColor → transparent (right)
-        paintBleed(leftCanvas, lColor, 'left');
-        paintBleed(rightCanvas, rColor, 'right');
-      } catch(e) {
-        // cross-origin fallback: just use dark
-        paintBleed(leftCanvas,  {r:8,g:8,b:8}, 'left');
-        paintBleed(rightCanvas, {r:8,g:8,b:8}, 'right');
-      }
-    }
-
-    if (imgEl.complete || imgEl.readyState >= 2) {
-      // small delay to ensure layout is done
-      setTimeout(draw, 80);
-    } else {
-      imgEl.addEventListener('load', () => setTimeout(draw, 80), {once:true});
-      imgEl.addEventListener('loadeddata', () => setTimeout(draw, 80), {once:true});
-    }
-  }
-
-  function avgColor(data) {
-    let r=0,g=0,b=0,count=0;
-    for (let i=0; i<data.length; i+=4) {
-      r+=data[i]; g+=data[i+1]; b+=data[i+2]; count++;
-    }
-    return { r:Math.round(r/count), g:Math.round(g/count), b:Math.round(b/count) };
-  }
-
-  function paintBleed(canvas, color, side) {
-    const w = canvas.offsetWidth  || 220;
-    const h = canvas.offsetHeight || window.innerHeight;
-    canvas.width  = w;
-    canvas.height = h;
-    const ctx = canvas.getContext('2d');
-    // gradient: opaque edge colour → transparent (toward center)
-    const grad = ctx.createLinearGradient(
-      side==='left'?0:w, 0,
-      side==='left'?w:0, 0
-    );
-    grad.addColorStop(0,   `rgba(${color.r},${color.g},${color.b},1)`);
-    grad.addColorStop(0.55,`rgba(${color.r},${color.g},${color.b},0.6)`);
-    grad.addColorStop(1,   `rgba(${color.r},${color.g},${color.b},0)`);
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, w, h);
-  }
+  document.addEventListener('mousedown', ()=>cur.classList.add('clicking'));
+  document.addEventListener('mouseup',   ()=>cur.classList.remove('clicking'));
 
   /* ── DATA ── */
   let imageFiles=[], videoFiles=[];
@@ -542,14 +436,14 @@
     }
   }
 
-  /* ── GALLERY NAV ── */
+  /* ── GALLERY ── */
   let currentType='images', currentIndex=0, slides=[], isAnimating=false;
 
   document.getElementById('card-images').addEventListener('click', ()=>openGallery('images'));
   document.getElementById('card-videos').addEventListener('click', ()=>openGallery('videos'));
 
   function openGallery(type) {
-    currentType = type; currentIndex = 0;
+    currentType=type; currentIndex=0;
     const files = type==='images'
       ? imageFiles.filter(f=>IMG_EXT.includes(getExt(f.name)))
       : videoFiles.filter(f=>VID_EXT.includes(getExt(f.name)));
@@ -565,9 +459,9 @@
     document.querySelectorAll('#carousel video').forEach(v=>v.pause());
   });
 
-  /* ── BUILD CAROUSEL ── */
+  /* ── BUILD ── */
   function buildCarousel(files, type) {
-    slides = files;
+    slides=files;
     const carousel   = document.getElementById('carousel');
     const thumbStrip = document.getElementById('thumb-strip');
     const empty      = document.getElementById('gallery-empty');
@@ -575,7 +469,7 @@
 
     if (!files.length) {
       empty.classList.add('show');
-      document.getElementById('empty-folder').textContent = type+'/';
+      document.getElementById('empty-folder').textContent=type+'/';
       document.getElementById('prev-btn').style.visibility='hidden';
       document.getElementById('next-btn').style.visibility='hidden';
       return;
@@ -585,46 +479,54 @@
     document.getElementById('next-btn').style.visibility='';
 
     files.forEach((file, i) => {
-      const url   = `${RAW}/${type}/${file.name}`;
-      const isVid = VID_EXT.includes(getExt(file.name));
+      const url    = `${RAW}/${type}/${file.name}`;
+      const isVid  = VID_EXT.includes(getExt(file.name));
+      const colors = EDGE_COLORS[file.name] || { left:'rgb(8,8,8)', right:'rgb(8,8,8)' };
 
       const slide = document.createElement('div');
-      slide.className = 'slide';
+      slide.className='slide';
 
-      // edge bleed canvases
-      const bleedL = document.createElement('canvas');
-      bleedL.className = 'slide-bleed-left';
-      const bleedR = document.createElement('canvas');
-      bleedR.className = 'slide-bleed-right';
+      /* blurred background (full image, blurred) */
+      const blurBg = document.createElement('div');
+      blurBg.className='slide-blur-bg';
+      blurBg.style.backgroundImage=`url(${url})`;
 
-      // top/bottom vignette
+      /* left bleed gradient */
+      const bleedL = document.createElement('div');
+      bleedL.className='slide-bleed slide-bleed-left';
+      bleedL.style.background=`linear-gradient(to right, ${colors.left} 0%, ${colors.left}cc 25%, ${colors.left}66 55%, transparent 100%)`;
+
+      /* right bleed gradient */
+      const bleedR = document.createElement('div');
+      bleedR.className='slide-bleed slide-bleed-right';
+      bleedR.style.background=`linear-gradient(to left, ${colors.right} 0%, ${colors.right}cc 25%, ${colors.right}66 55%, transparent 100%)`;
+
+      /* top/bottom vignette */
       const vig = document.createElement('div');
-      vig.className = 'slide-vignette';
+      vig.className='slide-vignette';
 
-      // media
+      /* media */
       const wrap = document.createElement('div');
-      wrap.className = 'slide-media-wrap';
+      wrap.className='slide-media-wrap';
       let mediaEl;
-
       if (isVid) {
-        mediaEl = document.createElement('video');
+        mediaEl=document.createElement('video');
         mediaEl.src=url; mediaEl.loop=true; mediaEl.muted=true;
         mediaEl.playsInline=true; mediaEl.preload='metadata';
       } else {
-        mediaEl = document.createElement('img');
+        mediaEl=document.createElement('img');
         mediaEl.src=url; mediaEl.alt=file.name;
-        mediaEl.loading = i===0?'eager':'lazy';
+        mediaEl.loading=i===0?'eager':'lazy';
         mediaEl.draggable=false;
-        // crossOrigin needed for canvas pixel reading
-        mediaEl.crossOrigin='anonymous';
       }
       wrap.appendChild(mediaEl);
 
-      // filename label
-      const info = document.createElement('div');
+      /* label */
+      const info=document.createElement('div');
       info.className='slide-info';
       info.innerHTML=`<span class="slide-name">${file.name}</span>`;
 
+      slide.appendChild(blurBg);
       slide.appendChild(bleedL);
       slide.appendChild(bleedR);
       slide.appendChild(vig);
@@ -632,14 +534,11 @@
       slide.appendChild(info);
       carousel.appendChild(slide);
 
-      // wire up bleed
-      buildBleed(mediaEl, slide);
-
-      // thumb
-      const thumb = document.createElement('div');
-      thumb.className = 'thumb'+(i===0?' active':'');
-      const tEl = isVid ? document.createElement('video') : document.createElement('img');
-      tEl.src=url; if(isVid){tEl.muted=true; tEl.preload='metadata';}
+      /* thumb */
+      const thumb=document.createElement('div');
+      thumb.className='thumb'+(i===0?' active':'');
+      const tEl=isVid?document.createElement('video'):document.createElement('img');
+      tEl.src=url; if(isVid){tEl.muted=true;tEl.preload='metadata';}
       thumb.appendChild(tEl);
       thumb.addEventListener('click', ()=>goTo(i));
       thumbStrip.appendChild(thumb);
@@ -651,90 +550,79 @@
   /* ── GOTO ── */
   function goTo(idx, instant=false) {
     if (isAnimating && !instant) return;
-    isAnimating = true;
+    isAnimating=true;
 
-    const prevVid = document.querySelector(`.slide:nth-child(${currentIndex+1}) video`);
+    const prevVid=document.querySelector(`.slide:nth-child(${currentIndex+1}) video`);
     if (prevVid) prevVid.pause();
 
-    currentIndex = ((idx % slides.length) + slides.length) % slides.length;
+    currentIndex = ((idx%slides.length)+slides.length)%slides.length;
+    const carousel=document.getElementById('carousel');
+    carousel.style.transition=instant?'none':'transform .72s cubic-bezier(.16,1,.3,1)';
+    carousel.style.transform=`translateX(${-currentIndex*100}vw)`;
 
-    const carousel = document.getElementById('carousel');
-    carousel.style.transition = instant ? 'none' : 'transform .72s cubic-bezier(.16,1,.3,1)';
-    carousel.style.transform  = `translateX(${-currentIndex * 100}vw)`;
+    setTimeout(()=>{
+      const curVid=document.querySelector(`.slide:nth-child(${currentIndex+1}) video`);
+      if(curVid) curVid.play();
+      isAnimating=false;
+    }, instant?0:720);
 
-    setTimeout(() => {
-      const curVid = document.querySelector(`.slide:nth-child(${currentIndex+1}) video`);
-      if (curVid) curVid.play();
-      isAnimating = false;
-    }, instant ? 0 : 720);
-
-    // ui updates
     document.querySelectorAll('.thumb').forEach((t,i)=>t.classList.toggle('active',i===currentIndex));
     document.getElementById('gallery-counter').textContent =
       String(currentIndex+1).padStart(2,'0')+' / '+String(slides.length).padStart(2,'0');
     document.getElementById('progress-bar').style.width =
       ((currentIndex+1)/slides.length*100)+'%';
 
-    const activeThumb = document.querySelectorAll('.thumb')[currentIndex];
-    if (activeThumb) activeThumb.scrollIntoView({inline:'center',behavior:'smooth',block:'nearest'});
+    const activeThumb=document.querySelectorAll('.thumb')[currentIndex];
+    if(activeThumb) activeThumb.scrollIntoView({inline:'center',behavior:'smooth',block:'nearest'});
 
-    // peek filename briefly
     document.querySelectorAll('.slide-info').forEach(el=>el.classList.remove('peek'));
-    const info = document.querySelector(`.slide:nth-child(${currentIndex+1}) .slide-info`);
-    if (info) {
-      clearTimeout(info._t);
-      info.classList.add('peek');
-      info._t = setTimeout(()=>info.classList.remove('peek'), 2200);
-    }
+    const info=document.querySelector(`.slide:nth-child(${currentIndex+1}) .slide-info`);
+    if(info){ clearTimeout(info._t); info.classList.add('peek'); info._t=setTimeout(()=>info.classList.remove('peek'),2200); }
 
     applyParallax(lastNX);
   }
 
   document.getElementById('prev-btn').addEventListener('click', ()=>goTo(currentIndex-1));
   document.getElementById('next-btn').addEventListener('click', ()=>goTo(currentIndex+1));
-
   document.addEventListener('keydown', e=>{
-    if (!document.getElementById('gallery').classList.contains('active')) return;
-    if (e.key==='ArrowRight'||e.key==='ArrowDown') goTo(currentIndex+1);
-    if (e.key==='ArrowLeft' ||e.key==='ArrowUp')   goTo(currentIndex-1);
-    if (e.key==='Escape') document.getElementById('back-btn').click();
+    if(!document.getElementById('gallery').classList.contains('active')) return;
+    if(e.key==='ArrowRight'||e.key==='ArrowDown') goTo(currentIndex+1);
+    if(e.key==='ArrowLeft' ||e.key==='ArrowUp')   goTo(currentIndex-1);
+    if(e.key==='Escape') document.getElementById('back-btn').click();
   });
 
   /* ── PARALLAX ── */
-  let lastNX = 0;
+  let lastNX=0;
   document.addEventListener('mousemove', e=>{
-    lastNX = (e.clientX/window.innerWidth - .5) * 2;
+    lastNX=(e.clientX/window.innerWidth-.5)*2;
     applyParallax(lastNX);
   });
-
   function applyParallax(nx) {
-    const slide = document.querySelector(`.slide:nth-child(${currentIndex+1})`);
-    if (!slide) return;
-    const media = slide.querySelector('img, video');
-    if (media) media.style.transform = `translateX(${nx * 10}px)`;
+    const slide=document.querySelector(`.slide:nth-child(${currentIndex+1})`);
+    if(!slide) return;
+    const media=slide.querySelector('img,video');
+    if(media) media.style.transform=`translateX(${nx*10}px)`;
   }
 
   /* ── SWIPE ── */
   let dragStart=null, dragging=false;
-
-  const vp = document.getElementById('carousel-viewport');
-  vp.addEventListener('pointerdown', e=>{ dragStart=e.clientX; dragging=true; vp.setPointerCapture(e.pointerId); });
+  const vp=document.getElementById('carousel-viewport');
+  vp.addEventListener('pointerdown', e=>{dragStart=e.clientX;dragging=true;vp.setPointerCapture(e.pointerId);});
   vp.addEventListener('pointermove', e=>{
-    if (!dragging) return;
-    const d = e.clientX - dragStart;
-    const c = document.getElementById('carousel');
+    if(!dragging) return;
+    const d=e.clientX-dragStart;
+    const c=document.getElementById('carousel');
     c.style.transition='none';
     c.style.transform=`translateX(calc(${-currentIndex*100}vw + ${d}px))`;
   });
   vp.addEventListener('pointerup', e=>{
-    if (!dragging) return; dragging=false;
-    const d = e.clientX - dragStart;
-    if (Math.abs(d)>55) goTo(d<0?currentIndex+1:currentIndex-1);
+    if(!dragging) return; dragging=false;
+    const d=e.clientX-dragStart;
+    if(Math.abs(d)>55) goTo(d<0?currentIndex+1:currentIndex-1);
     else goTo(currentIndex);
     dragStart=null;
   });
 
-  /* ── BOOT ── */
   init();
   </script>
 </body>
