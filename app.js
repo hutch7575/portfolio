@@ -78,42 +78,6 @@ function showScreen(id) {
   }
 }
 
-/* ── NAV HINT: show after 4s idle, hide on activity ── */
-let _hintTimer = null;
-let _hintId = null;
-
-function startNavHint(id) {
-  stopNavHint();
-  _hintId = id;
-  _hintTimer = setTimeout(() => {
-    const el = document.getElementById(id);
-    if (el) el.classList.add('show');
-  }, 4000);
-}
-
-function stopNavHint() {
-  if (_hintTimer) { clearTimeout(_hintTimer); _hintTimer = null; }
-  if (_hintId) {
-    const el = document.getElementById(_hintId);
-    if (el) el.classList.remove('show');
-  }
-}
-
-// reset idle timer on any user activity
-['pointermove','pointerdown','keydown','wheel'].forEach(ev => {
-  window.addEventListener(ev, () => {
-    if (_hintId) {
-      stopNavHint();
-      startNavHint(_hintId);
-    }
-  }, { passive: true });
-});
-
-function showNavHint(id) {
-  stopNavHint();
-  startNavHint(id);
-}
-
 document.getElementById('zone-img').addEventListener('click', () => { wakeAudio(); playWhoosh(); setTimeout(openGallery, 80); });
 document.getElementById('zone-vid').addEventListener('click', () => { wakeAudio(); playWhoosh(); setTimeout(openVideos, 80); });
 document.getElementById('gal-back').addEventListener('click', () => { if (galLifted) dropFrame(galLifted); stopNavHint(); showScreen('sc-cat'); });
@@ -139,7 +103,6 @@ function openGallery() {
   buildWall();
   showScreen('sc-gallery');
   setTimeout(() => moveWallSpot(galIdx, true), 120);
-  showNavHint('gal-hint');
 }
 
 function buildWall() {
@@ -329,12 +292,11 @@ function dropFrame(frame) {
 }
 
 /* ── 6. VIDEO GALLERY ── */
-let vidIdx = 0, vidBusy = false;
+let vidIdx = 0, vidBusy = false, vidLifted = null;
 
 function openVideos() {
   buildVidWall();
   showScreen('sc-tv');
-  showNavHint('vid-hint');
 }
 
 let vidMuted = true; // tracks audio state
@@ -358,8 +320,7 @@ function buildVidWall() {
   document.getElementById('vid-controls').style.display = 'flex';
 
   vidFiles.forEach((file, i) => {
-    const url = `${RAW}/videos/${file.name}`;
-
+    const url   = `${RAW}/videos/${file.name}`;
     const frame = document.createElement('div');
     frame.className = 'vid-frame ' + (i === 0 ? 'active' : 'dimmed');
     frame.dataset.idx = i;
@@ -368,122 +329,26 @@ function buildVidWall() {
     mount.className = 'vid-mount';
 
     const vid = document.createElement('video');
-    vid.className = 'vid-el';
-    vid.src = url; vid.loop = true; vid.muted = true;
-    vid.playsInline = true; vid.preload = 'metadata';
-    vid.style.pointerEvents = 'none'; // don't let video eat events
+    vid.className = 'vid-el'; vid.src = url;
+    vid.loop = true; vid.muted = true; vid.playsInline = true; vid.preload = 'metadata';
     mount.appendChild(vid);
 
     const scanlines = document.createElement('div');
     scanlines.className = 'vid-scanlines';
-    scanlines.style.pointerEvents = 'none';
     mount.appendChild(scanlines);
 
-    // info panel — same as image gallery, sits above label strip
-    const panel = document.createElement('div');
-    panel.className = 'pic-info-panel';
-    const desc = descs[file.name] || '';
-    panel.innerHTML = desc
-      ? `<p class="pic-info-desc">${desc}</p>`
-      : `<p class="pic-info-empty">No description yet.</p>`;
-    mount.appendChild(panel);
+    const sc = document.createElement('canvas');
+    sc.className = 'vid-static-canvas';
+    mount.appendChild(sc);
 
     const label = document.createElement('div');
     label.className = 'vid-mount-label';
-    label.style.pointerEvents = 'none';
     label.innerHTML = `
       <span class="vid-mount-ch">CH ${String(i + 1).padStart(2, '0')}</span>
       <span class="vid-mount-name">${file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ')}</span>`;
     mount.appendChild(label);
-
     frame.appendChild(mount);
-
-    // hold ring canvas — sits over entire frame
-    const ring = document.createElement('div');
-    ring.className = 'hold-ring';
-    ring.style.pointerEvents = 'none';
-    const rc = document.createElement('canvas');
-    rc.style.pointerEvents = 'none';
-    ring.appendChild(rc);
-    frame.appendChild(ring);
-
     wall.appendChild(frame);
-  });
-
-  // ── HOLD TO REVEAL — single listener on wall, no child interference ──
-  let holdRaf = null, holdStart = null, holdFrame = null, holdProg = 0;
-
-  function cancelHold() {
-    if (holdRaf) { cancelAnimationFrame(holdRaf); holdRaf = null; }
-    if (holdFrame) {
-      holdFrame.classList.remove('holding');
-      const rc = holdFrame.querySelector('.hold-ring canvas');
-      if (rc) { const ctx = rc.getContext('2d'); ctx.clearRect(0, 0, rc.width, rc.height); }
-    }
-    holdFrame = null; holdStart = null; holdProg = 0;
-  }
-
-  function doHoldFrame() {
-    if (!holdFrame || !holdStart) return;
-    const mount = holdFrame.querySelector('.vid-mount');
-    const rc    = holdFrame.querySelector('.hold-ring canvas');
-    if (!mount || !rc) return;
-    const W = mount.offsetWidth + 20, H = mount.offsetHeight + 20;
-    if (rc.width !== W || rc.height !== H) { rc.width = W; rc.height = H; }
-    holdProg = Math.min(1, (Date.now() - holdStart) / 800);
-    if (holdProg > .32 && holdProg < .36) playHoldTick();
-    if (holdProg > .65 && holdProg < .69) playHoldTick();
-    const ctx = rc.getContext('2d');
-    ctx.clearRect(0, 0, W, H);
-    const total = 2 * (W + H) - 8 * 8 + 2 * Math.PI * 8;
-    ctx.strokeStyle = `rgba(247,37,133,${0.4 + holdProg * 0.5})`;
-    ctx.lineWidth = 2; ctx.lineCap = 'round';
-    ctx.setLineDash([holdProg * total, total]);
-    drawRoundedRectPath(ctx, 0, 0, W, H, 8);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    if (holdProg >= 1) {
-      playHoldReady();
-      holdFrame.classList.remove('holding');
-      // lift or drop
-      if (holdFrame.classList.contains('lifted')) {
-        holdFrame.classList.remove('lifted', 'lifting');
-        vidLifted = null;
-      } else {
-        if (vidLifted && vidLifted !== holdFrame) {
-          vidLifted.classList.remove('lifted', 'lifting');
-        }
-        holdFrame.classList.add('lifted', 'lifting');
-        vidLifted = holdFrame;
-        playLift();
-      }
-      cancelHold();
-      return;
-    }
-    holdRaf = requestAnimationFrame(doHoldFrame);
-  }
-
-  wall.addEventListener('pointerdown', e => {
-    const frame = e.target.closest('.vid-frame');
-    if (!frame) return;
-    const idx = parseInt(frame.dataset.idx);
-    if (idx !== vidIdx) return; // only active frame
-    wakeAudio();
-    cancelHold();
-    holdFrame = frame;
-    holdStart = Date.now();
-    holdProg = 0;
-    frame.classList.add('holding');
-    holdRaf = requestAnimationFrame(doHoldFrame);
-    e.preventDefault();
-  }, { passive: false });
-
-  wall.addEventListener('pointerup',    () => cancelHold());
-  wall.addEventListener('pointerleave', () => cancelHold());
-  wall.addEventListener('pointermove',  e => {
-    // cancel if moved too much (prevent hold during swipe)
-    if (!holdFrame) return;
-    // small tolerance — if pointer moved > 10px, cancel
   });
 
   // audio toggle
@@ -499,48 +364,105 @@ function buildVidWall() {
     const frame = document.querySelector('.vid-frame.active');
     const vid = frame ? frame.querySelector('video') : null;
     if (!vid) return;
-    if (!document.fullscreenElement) vid.requestFullscreen().catch(() => {});
-    else document.exitFullscreen();
+    if (!document.fullscreenElement) {
+      vid.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen();
+    }
   };
 
   vidGoTo(0, true);
+  const hint = document.getElementById('vid-click-hint');
+  hint.classList.add('show');
+  setTimeout(() => hint.classList.remove('show'), 3500);
 }
 
-// static removed — clean transitions only
+function vidGoTo(idx, instant = false) {
+  if (vidBusy && !instant) return;
+  vidIdx = ((idx % vidFiles.length) + vidFiles.length) % vidFiles.length;
+  const wall   = document.getElementById('vid-wall');
+  const frames = wall.querySelectorAll('.vid-frame');
 
-let vidLifted = null;
+  // pause all
+  frames.forEach(f => { const v = f.querySelector('video'); if (v) { v.pause(); v.currentTime = 0; } });
 
-// setupVidHold moved inline to buildVidWall
-function liftVidFrame(frame) {
-  if (vidLifted && vidLifted !== frame) dropVidFrame(vidLifted);
-  frame.classList.add('lifted', 'lifting');
-  frame._holdFired = true;
-  vidLifted = frame;
-  playLift();
-  setTimeout(() => { frame._holdFired = false; }, 250);
+  // clean transition — no static
+
+  // update classes
+  frames.forEach((f, i) => {
+    f.classList.toggle('active', i === vidIdx);
+    f.classList.toggle('dimmed', i !== vidIdx);
+  });
+
+  const frame = wall.children[vidIdx];
+  if (!frame) return;
+
+  const doPosition = () => {
+    const targetX = -(frame.offsetLeft - (window.innerWidth - frame.offsetWidth) / 2);
+    wall.style.transition = instant ? 'none' : 'transform .6s cubic-bezier(.16,1,.3,1)';
+    wall.style.transform  = `translateX(${targetX}px)`;
+    const spot = document.getElementById('vid-spot');
+    spot.style.transition = instant ? 'none' : 'left .6s cubic-bezier(.16,1,.3,1)';
+    spot.style.left = (frame.offsetLeft + frame.offsetWidth / 2 + targetX) + 'px';
+  };
+
+  if (instant) { requestAnimationFrame(() => requestAnimationFrame(doPosition)); }
+  else { doPosition(); }
+
+  document.getElementById('tv-ctr').textContent   = String(vidIdx + 1).padStart(2, '0') + ' / ' + String(vidFiles.length).padStart(2, '0');
+  document.getElementById('vid-prog').style.width  = ((vidIdx + 1) / vidFiles.length * 100) + '%';
+
+  // play new video after static clears
+  const delay = instant ? 0 : 350;
+  setTimeout(() => {
+    const newVid = frame.querySelector('video');
+    if (newVid) {
+      newVid.muted = vidMuted;
+      newVid.play().catch(() => {});
+    }
+    vidBusy = false;
+  }, delay);
 }
-function dropVidFrame(frame) {
-  frame.classList.remove('lifted', 'lifting');
-  vidLifted = null;
+
+function showVidStatic(frame, vid) {
+  vidBusy = true;
+  const sc  = frame.querySelector('.vid-static-canvas');
+  const el  = frame.querySelector('.vid-mount');
+  if (!sc || !el) { vidBusy = false; return; }
+  sc.width = el.offsetWidth || 900;
+  sc.height = el.offsetHeight || 560;
+  sc.style.opacity = '1';
+  const ctx = sc.getContext('2d');
+  let af, frames = 0;
+  (function ds() {
+    frames++;
+    const id = ctx.createImageData(sc.width, sc.height);
+    for (let i = 0; i < id.data.length; i += 4) {
+      const v = Math.random() * 255 | 0;
+      id.data[i] = v; id.data[i+1] = v; id.data[i+2] = v;
+      id.data[i+3] = frames < 4 ? 220 : Math.max(0, 220 - (frames-4)*40);
+    }
+    ctx.putImageData(id, 0, 0);
+    if (frames < 10) af = requestAnimationFrame(ds);
+    else { sc.style.opacity = '0'; if (vid) { vid.muted = vidMuted; vid.play().catch(()=>{}); } }
+  })();
 }
 
-// drop lifted frame on channel change
-const _origVidGoTo = vidGoTo;
+document.getElementById('vid-prev').addEventListener('click', () => { if(!vidBusy) vidGoTo(vidIdx - 1); });
+document.getElementById('vid-next').addEventListener('click', () => { if(!vidBusy) vidGoTo(vidIdx + 1); });
 
-document.getElementById('vid-prev').addEventListener('click', () => { if(!vidBusy) { if(vidLifted) dropVidFrame(vidLifted); vidGoTo(vidIdx - 1); } });
-document.getElementById('vid-next').addEventListener('click', () => { if(!vidBusy) { if(vidLifted) dropVidFrame(vidLifted); vidGoTo(vidIdx + 1); } });
-
-// channel switching via nav buttons and swipe only
+// click on active video mount to change channel
+document.getElementById('sc-tv').addEventListener('click', e => {
+  const mount = e.target.closest('.vid-mount');
+  if (mount && !vidBusy) vidGoTo(vidIdx + 1);
+});
 
 // swipe
 let vDS = null, vDr = false;
 document.getElementById('sc-tv').addEventListener('pointerdown', e => { vDS = e.clientX; vDr = true; });
 document.getElementById('sc-tv').addEventListener('pointerup',   e => {
   if (!vDr) return; vDr = false;
-  if (Math.abs(e.clientX - vDS) > 65) {
-    if (vidLifted) dropVidFrame(vidLifted);
-    vidGoTo(e.clientX < vDS ? vidIdx + 1 : vidIdx - 1);
-  }
+  if (Math.abs(e.clientX - vDS) > 65) vidGoTo(e.clientX < vDS ? vidIdx + 1 : vidIdx - 1);
   vDS = null;
 });
 
@@ -558,42 +480,20 @@ loadData().then(() => {
    DEVTOOLS DETECTION
 ═══════════════════════════════ */
 (function() {
-  // Mobile browsers have large native UI bars that inflate outerHeight naturally.
-  // Only run on non-touch desktop devices.
+  // Skip on mobile — browser chrome inflates outer dimensions naturally
   const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || navigator.maxTouchPoints > 1;
   if (isMobile) return;
-
-  let devOpen = false;
-  let warned = false;
-
+  let devOpen = false, warned = false;
   function check() {
-    // Require BOTH width AND height to be suspicious, with a big threshold.
-    // Undocked devtools won't trigger this (same outer dimensions).
-    const widthDiff  = window.outerWidth  - window.innerWidth;
-    const heightDiff = window.outerHeight - window.innerHeight;
-    // Docked devtools opens to the side (widthDiff > 300) or bottom (heightDiff > 300)
-    const isOpen = widthDiff > 300 || heightDiff > 300;
-
+    const isOpen = (window.outerWidth - window.innerWidth) > 300 || (window.outerHeight - window.innerHeight) > 300;
     if (isOpen && !devOpen && !warned) {
-      devOpen = true;
-      warned = true;
-      triggerDevtoolsWarning();
-    } else if (!isOpen) {
-      devOpen = false;
-      warned = false;
-    }
+      devOpen = true; warned = true;
+      const overlay = document.getElementById('devtools-overlay');
+      if (overlay) {
+        overlay.classList.add('show');
+        setTimeout(() => { sessionStorage.removeItem('jw_screen'); window.location.reload(); }, 2200);
+      }
+    } else if (!isOpen) { devOpen = false; warned = false; }
   }
-
-  function triggerDevtoolsWarning() {
-    const overlay = document.getElementById('devtools-overlay');
-    if (overlay) {
-      overlay.classList.add('show');
-      setTimeout(() => {
-        sessionStorage.removeItem('jw_screen');
-        window.location.reload();
-      }, 2200);
-    }
-  }
-
   setInterval(check, 1000);
 })();
