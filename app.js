@@ -78,6 +78,13 @@ function showScreen(id) {
   }
 }
 
+function showNavHint(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3800);
+}
+
 document.getElementById('zone-img').addEventListener('click', () => { wakeAudio(); playWhoosh(); setTimeout(openGallery, 80); });
 document.getElementById('zone-vid').addEventListener('click', () => { wakeAudio(); playWhoosh(); setTimeout(openVideos, 80); });
 document.getElementById('gal-back').addEventListener('click', () => { if (galLifted) dropFrame(galLifted); showScreen('sc-cat'); });
@@ -103,6 +110,7 @@ function openGallery() {
   buildWall();
   showScreen('sc-gallery');
   setTimeout(() => moveWallSpot(galIdx, true), 120);
+  showNavHint('gal-hint');
 }
 
 function buildWall() {
@@ -297,6 +305,7 @@ let vidIdx = 0, vidBusy = false;
 function openVideos() {
   buildVidWall();
   showScreen('sc-tv');
+  showNavHint('vid-hint');
 }
 
 let vidMuted = true; // tracks audio state
@@ -346,6 +355,22 @@ function buildVidWall() {
       <span class="vid-mount-ch">CH ${String(i + 1).padStart(2, '0')}</span>
       <span class="vid-mount-name">${file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ')}</span>`;
     mount.appendChild(label);
+
+    // info panel (same as image gallery)
+    const panel = document.createElement('div');
+    panel.className = 'pic-info-panel';
+    const desc = descs[file.name] || '';
+    panel.innerHTML = desc
+      ? `<p class="pic-info-desc">${desc}</p>`
+      : `<p class="pic-info-empty">No description yet.</p>`;
+    mount.appendChild(panel);
+
+    // hold ring
+    const ring = document.createElement('div');
+    ring.className = 'hold-ring';
+    ring.appendChild(document.createElement('canvas'));
+    frame.appendChild(ring);
+
     frame.appendChild(mount);
     wall.appendChild(frame);
   });
@@ -371,9 +396,7 @@ function buildVidWall() {
   };
 
   vidGoTo(0, true);
-  const hint = document.getElementById('vid-click-hint');
-  hint.classList.add('show');
-  setTimeout(() => hint.classList.remove('show'), 3500);
+
 }
 
 function vidGoTo(idx, instant = false) {
@@ -452,21 +475,82 @@ function showVidStatic(frame, vid) {
   })();
 }
 
-document.getElementById('vid-prev').addEventListener('click', () => { if(!vidBusy) vidGoTo(vidIdx - 1); });
-document.getElementById('vid-next').addEventListener('click', () => { if(!vidBusy) vidGoTo(vidIdx + 1); });
+let vidLifted = null;
 
-// click on active video mount to change channel
-document.getElementById('sc-tv').addEventListener('click', e => {
-  const mount = e.target.closest('.vid-mount');
-  if (mount && !vidBusy) vidGoTo(vidIdx + 1);
-});
+function setupVidHold(frame, idx) {
+  let prog = 0, raf = null, startT = null;
+
+  function startHold() {
+    if (idx !== vidIdx) return; // only active frame
+    if (vidLifted === frame) { dropVidFrame(frame); return; }
+    frame._holdFired = false;
+    frame.classList.add('holding');
+    prog = 0; startT = Date.now();
+    animVidRing();
+  }
+  function endHold() {
+    if (!frame.classList.contains('holding')) return;
+    frame.classList.remove('holding');
+    cancelAnimationFrame(raf);
+    if (prog < 1) prog = 0;
+  }
+  function animVidRing() {
+    const ringCanvas = frame.querySelector('.hold-ring canvas');
+    if (!ringCanvas) return;
+    const mount = frame.querySelector('.vid-mount');
+    const W = mount.offsetWidth + 20, H = mount.offsetHeight + 20;
+    ringCanvas.width = W; ringCanvas.height = H;
+    prog = Math.min(1, (Date.now() - startT) / 700);
+    if (prog > .32 && prog < .35) playHoldTick();
+    if (prog > .65 && prog < .68) playHoldTick();
+    const ctx = ringCanvas.getContext('2d');
+    ctx.clearRect(0, 0, W, H);
+    const total = 2 * (W + H) - 8 * 8 + 2 * Math.PI * 8;
+    const drawn = prog * total;
+    ctx.strokeStyle = `rgba(247,37,133,${.4 + prog * .5})`;
+    ctx.lineWidth = 2; ctx.lineCap = 'round';
+    ctx.setLineDash([drawn, total]);
+    drawRoundedRectPath(ctx, 0, 0, W, H, 8);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    if (prog >= 1) { playHoldReady(); frame.classList.remove('holding'); liftVidFrame(frame); return; }
+    raf = requestAnimationFrame(animVidRing);
+  }
+  frame.addEventListener('pointerdown',  e => { wakeAudio(); startHold(); e.preventDefault(); });
+  frame.addEventListener('pointerup',    endHold);
+  frame.addEventListener('pointerleave', endHold);
+}
+
+function liftVidFrame(frame) {
+  if (vidLifted && vidLifted !== frame) dropVidFrame(vidLifted);
+  frame.classList.add('lifted', 'lifting');
+  frame._holdFired = true;
+  vidLifted = frame;
+  playLift();
+  setTimeout(() => { frame._holdFired = false; }, 250);
+}
+function dropVidFrame(frame) {
+  frame.classList.remove('lifted', 'lifting');
+  vidLifted = null;
+}
+
+// drop lifted frame on channel change
+const _origVidGoTo = vidGoTo;
+
+document.getElementById('vid-prev').addEventListener('click', () => { if(!vidBusy) { if(vidLifted) dropVidFrame(vidLifted); vidGoTo(vidIdx - 1); } });
+document.getElementById('vid-next').addEventListener('click', () => { if(!vidBusy) { if(vidLifted) dropVidFrame(vidLifted); vidGoTo(vidIdx + 1); } });
+
+// channel switching via nav buttons and swipe only
 
 // swipe
 let vDS = null, vDr = false;
 document.getElementById('sc-tv').addEventListener('pointerdown', e => { vDS = e.clientX; vDr = true; });
 document.getElementById('sc-tv').addEventListener('pointerup',   e => {
   if (!vDr) return; vDr = false;
-  if (Math.abs(e.clientX - vDS) > 65) vidGoTo(e.clientX < vDS ? vidIdx + 1 : vidIdx - 1);
+  if (Math.abs(e.clientX - vDS) > 65) {
+    if (vidLifted) dropVidFrame(vidLifted);
+    vidGoTo(e.clientX < vDS ? vidIdx + 1 : vidIdx - 1);
+  }
   vDS = null;
 });
 
