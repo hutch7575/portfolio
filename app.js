@@ -215,12 +215,14 @@ function galGoTo(idx, instant = false) {
   const doPosition = () => {
     const frame = wall.children[galIdx];
     if (!frame) return;
-    // use getBoundingClientRect so padding/transform don't skew measurements
-    const rect = frame.getBoundingClientRect();
-    const frameCentreX = rect.left + rect.width / 2;
-    const screenCentreX = window.innerWidth / 2;
-    const currentTransform = new DOMMatrix(getComputedStyle(wall).transform).m41;
-    const targetX = currentTransform + (screenCentreX - frameCentreX);
+    // reset transform so we measure natural offsetLeft, then calc correct shift
+    wall.style.transition = 'none';
+    wall.style.transform  = 'translateX(0)';
+    // force reflow so measurement reflects the reset
+    void wall.offsetWidth;
+    const naturalLeft = frame.getBoundingClientRect().left;
+    const naturalCentre = naturalLeft + frame.getBoundingClientRect().width / 2;
+    const targetX = window.innerWidth / 2 - naturalCentre;
     wall.style.transition = instant ? 'none' : 'transform .78s cubic-bezier(.16,1,.3,1)';
     wall.style.transform  = `translateX(${targetX}px)`;
     moveWallSpot(galIdx, instant);
@@ -240,7 +242,8 @@ function moveWallSpot(idx, instant = false) {
   const wall  = document.getElementById('gal-wall');
   const frame = wall.children[idx];
   if (!frame) return;
-  const vW = window.innerWidth, vH = window.innerHeight;
+  const vH = window.innerHeight;
+  // frame is already positioned correctly at this point, just read its centre
   const rect = frame.getBoundingClientRect();
   const cx = rect.left + rect.width / 2;
   const spot = document.getElementById('wall-spot');
@@ -574,16 +577,18 @@ function vidGoTo(idx, instant = false) {
   if (!frame) return;
 
   const doPosition = () => {
+    // reset transform, measure natural position, then shift to centre
+    wall.style.transition = 'none';
+    wall.style.transform  = 'translateX(0)';
+    void wall.offsetWidth;
     const rect = frame.getBoundingClientRect();
-    const frameCentreX = rect.left + rect.width / 2;
-    const screenCentreX = window.innerWidth / 2;
-    const currentTransform = new DOMMatrix(getComputedStyle(wall).transform).m41;
-    const targetX = currentTransform + (screenCentreX - frameCentreX);
+    const naturalCentre = rect.left + rect.width / 2;
+    const targetX = window.innerWidth / 2 - naturalCentre;
     wall.style.transition = instant ? 'none' : 'transform .6s cubic-bezier(.16,1,.3,1)';
     wall.style.transform  = `translateX(${targetX}px)`;
     const spot = document.getElementById('vid-spot');
     spot.style.transition = instant ? 'none' : 'left .6s cubic-bezier(.16,1,.3,1)';
-    spot.style.left = screenCentreX + 'px';
+    spot.style.left = (window.innerWidth / 2) + 'px';
   };
 
   if (instant) {
