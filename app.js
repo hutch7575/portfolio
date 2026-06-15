@@ -545,8 +545,8 @@ function dropVidFrame(frame) {
 // drop lifted frame on channel change
 const _origVidGoTo = vidGoTo;
 
-document.getElementById('vid-prev').addEventListener('click', () => { if(!vidBusy) { if(vidLifted) dropVidFrame(vidLifted); vidGoTo(vidIdx - 1); } });
-document.getElementById('vid-next').addEventListener('click', () => { if(!vidBusy) { if(vidLifted) dropVidFrame(vidLifted); vidGoTo(vidIdx + 1); } });
+document.getElementById('vid-prev').addEventListener('click', () => { if(!vidBusy) vidGoTo(vidIdx - 1); });
+document.getElementById('vid-next').addEventListener('click', () => { if(!vidBusy) vidGoTo(vidIdx + 1); });
 
 // channel switching via nav buttons and swipe only
 
