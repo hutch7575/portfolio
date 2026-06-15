@@ -138,11 +138,8 @@ let galIdx = 0, galLifted = null;
 function openGallery() {
   buildWall();
   showScreen('sc-gallery');
-  // wait for screen to be visible and laid out before measuring positions
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    galGoTo(0, true);
-    showNavHint('gal-hint');
-  }));
+  // small delay so display:block has taken effect before measuring
+  setTimeout(() => { galGoTo(0, true); showNavHint('gal-hint'); }, 50);
 }
 
 function buildWall() {
@@ -188,6 +185,7 @@ function buildWall() {
       <span class="pic-mount-title">${file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ')}</span>
       <span class="pic-mount-num">${String(i + 1).padStart(2, '0')}</span>`;
     mount.appendChild(label);
+
     frame.appendChild(mount);
 
     setupHold(frame, i);
@@ -198,7 +196,6 @@ function buildWall() {
 
     wall.appendChild(frame);
   });
-  // positioning handled by openGallery after screen is visible
 }
 
 function galGoTo(idx, instant = false) {
@@ -214,86 +211,41 @@ function galGoTo(idx, instant = false) {
   const doPosition = () => {
     const frame = wall.children[galIdx];
     if (!frame) return;
-    // offsetLeft is relative to parent (wall), unaffected by wall's transform.
-    // So: to centre the frame, shift wall so frame centre = screen centre.
-    // targetX = screenCentre - (frame.offsetLeft + frameWidth/2)
-    const targetX = Math.round(
-      window.innerWidth / 2 - (frame.offsetLeft + frame.offsetWidth / 2)
-    );
+    const targetX = Math.round(window.innerWidth / 2 - (frame.offsetLeft + frame.offsetWidth / 2));
     wall.style.transition = instant ? 'none' : 'transform .78s cubic-bezier(.16,1,.3,1)';
     wall.style.transform  = `translateX(${targetX}px)`;
-    // spotlight: centred on screen since frame is now centred
-    const spot = document.getElementById('wall-spot');
-    spot.style.transition = instant ? 'none' : 'left .78s cubic-bezier(.16,1,.3,1), top .6s cubic-bezier(.16,1,.3,1)';
-    spot.style.left = (window.innerWidth / 2) + 'px';
-    spot.style.top  = (window.innerHeight * 0.46) + 'px';
+    moveWallSpot(galIdx, instant);
   };
-  if (instant) {
-    // double rAF ensures browser has painted the screen before measuring offsetLeft
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      doPosition();
-      moveWallSpot(galIdx, true);
-    }));
-  } else {
-    doPosition();
-  }
+  doPosition();
 }
 
 function moveWallSpot(idx, instant = false) {
-  // active frame is always centred on screen, so spotlight = screen centre
   const spot = document.getElementById('wall-spot');
+  if (!spot) return;
   spot.style.transition = instant ? 'none' : 'left .78s cubic-bezier(.16,1,.3,1), top .6s cubic-bezier(.16,1,.3,1)';
   spot.style.left = (window.innerWidth / 2) + 'px';
   spot.style.top  = (window.innerHeight * 0.46) + 'px';
 }
 
-
-
 // recenter on window resize
 window.addEventListener('resize', () => {
-  requestAnimationFrame(() => {
-    if (document.getElementById('sc-gallery').classList.contains('on')) {
-      galGoTo(galIdx, true);
-    }
-    if (document.getElementById('sc-tv').classList.contains('on')) {
-      vidGoTo(vidIdx, true);
-    }
-  });
+  if (document.getElementById('sc-gallery').classList.contains('on')) {
+    galGoTo(galIdx, true);
+  }
+  if (document.getElementById('sc-tv').classList.contains('on')) {
+    vidGoTo(vidIdx, true);
+  }
 });
 
 document.getElementById('gal-prev').addEventListener('click', () => galGoTo(galIdx - 1));
 document.getElementById('gal-next').addEventListener('click', () => galGoTo(galIdx + 1));
 
 // swipe
-
-// Gallery swipe — pointer events for desktop, touch for mobile
-let gDS = null, gDY = null, gDr = false;
-document.getElementById('sc-gallery').addEventListener('touchstart', e => {
-  gDS = e.touches[0].clientX; gDY = e.touches[0].clientY; gDr = true;
-}, { passive: true });
-document.getElementById('sc-gallery').addEventListener('touchmove', e => {
-  if (!gDr || gDS === null) return;
-  const dx = e.touches[0].clientX - gDS;
-  const dy = e.touches[0].clientY - gDY;
-  // if clearly horizontal swipe, prevent page scroll
-  if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10) {
-    e.preventDefault();
-  }
-}, { passive: false });
-document.getElementById('sc-gallery').addEventListener('touchend', e => {
+let gDS = null, gDr = false;
+document.getElementById('sc-gallery').addEventListener('pointerdown', e => { gDS = e.clientX; gDr = true; });
+document.getElementById('sc-gallery').addEventListener('pointerup',   e => {
   if (!gDr) return; gDr = false;
-  const dx = e.changedTouches[0].clientX - gDS;
-  if (Math.abs(dx) > 55) galGoTo(dx < 0 ? galIdx + 1 : galIdx - 1);
-  gDS = null; gDY = null;
-});
-// desktop mouse swipe
-document.getElementById('sc-gallery').addEventListener('pointerdown', e => {
-  if (e.pointerType === 'touch') return; // handled above
-  gDS = e.clientX; gDr = true;
-});
-document.getElementById('sc-gallery').addEventListener('pointerup', e => {
-  if (e.pointerType === 'touch' || !gDr) return; gDr = false;
-  if (Math.abs(e.clientX - gDS) > 55) galGoTo(e.clientX < gDS ? galIdx + 1 : galIdx - 1);
+  if (Math.abs(e.clientX - gDS) > 65) galGoTo(e.clientX < gDS ? galIdx + 1 : galIdx - 1);
   gDS = null;
 });
 
@@ -340,15 +292,9 @@ function setupHold(frame, idx) {
     raf = requestAnimationFrame(animRing);
   }
 
-  frame.addEventListener('pointerdown',  e => {
-    if (e.pointerType === 'touch') return; // handled by touchstart
-    wakeAudio(); startHold(); e.preventDefault();
-  });
-  frame.addEventListener('touchstart', e => { wakeAudio(); startHold(); }, { passive: true });
+  frame.addEventListener('pointerdown',  e => { wakeAudio(); startHold(); e.preventDefault(); });
   frame.addEventListener('pointerup',    endHold);
   frame.addEventListener('pointerleave', endHold);
-  frame.addEventListener('touchend',     endHold);
-  frame.addEventListener('touchcancel',  endHold);
 }
 
 function drawRoundedRectPath(ctx, x, y, w, h, r) {
@@ -391,11 +337,7 @@ function _vhCancel() {
 function openVideos() {
   buildVidWall();
   showScreen('sc-tv');
-  // wait for screen to be visible and laid out before measuring positions
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    vidGoTo(0, true);
-    showNavHint('vid-hint');
-  }));
+  setTimeout(() => { vidGoTo(0, true); showNavHint('vid-hint'); }, 50);
 }
 
 let vidMuted = true; // tracks audio state
@@ -460,17 +402,17 @@ function buildVidWall() {
     const ring = document.createElement('div');
     ring.className = 'hold-ring';
     ring.appendChild(document.createElement('canvas'));
-    frame.appendChild(ring);
     frame.dataset.idx = i;
+    frame.appendChild(ring);
     wall.appendChild(frame);
   });
 
-  // disable pointer events on video children so hold reaches the frame
+  // disable pointer events on children so hold reaches frame
   wall.querySelectorAll('video, .vid-scanlines, .vid-static-canvas, .vid-mount-label').forEach(el => {
     el.style.pointerEvents = 'none';
   });
 
-  // ── VIDEO HOLD TO REVEAL ── (vars at module scope, _vhCancel at module scope)
+  // ── VIDEO HOLD TO REVEAL ──
   function _vhAnimate() {
     if (!_vhFrame || !_vhStart) return;
     const mount = _vhFrame.querySelector('.vid-mount');
@@ -494,35 +436,24 @@ function buildVidWall() {
       playHoldReady();
       _vhFrame.classList.remove('holding');
       if (_vhFrame.classList.contains('lifted')) {
-        _vhFrame.classList.remove('lifted', 'lifting');
-        vidLifted = null;
+        _vhFrame.classList.remove('lifted', 'lifting'); vidLifted = null;
       } else {
         if (vidLifted) vidLifted.classList.remove('lifted', 'lifting');
-        _vhFrame.classList.add('lifted', 'lifting');
-        vidLifted = _vhFrame;
-        playLift();
+        _vhFrame.classList.add('lifted', 'lifting'); vidLifted = _vhFrame; playLift();
       }
       _vhCancel(); return;
     }
     _vhRaf = requestAnimationFrame(_vhAnimate);
   }
-  function startVidHold(frame) {
-    if (!frame) return;
-    if (parseInt(frame.dataset.idx) !== vidIdx) return;
+  wall.addEventListener('pointerdown', e => {
+    const frame = e.target.closest('.vid-frame');
+    if (!frame || parseInt(frame.dataset.idx) !== vidIdx) return;
     wakeAudio(); _vhCancel();
     _vhFrame = frame; _vhStart = Date.now();
     frame.classList.add('holding');
     _vhRaf = requestAnimationFrame(_vhAnimate);
-  }
-  wall.addEventListener('pointerdown', e => {
-    if (e.pointerType === 'touch') return; // handled by touchstart
-    const frame = e.target.closest('.vid-frame');
-    startVidHold(frame); e.preventDefault();
+    e.preventDefault();
   }, { passive: false });
-  wall.addEventListener('touchstart', e => {
-    const frame = e.target.closest('.vid-frame');
-    if (frame) startVidHold(frame);
-  }, { passive: true });
   wall.addEventListener('pointerup',    () => _vhCancel());
   wall.addEventListener('pointercancel',() => _vhCancel());
   wall.addEventListener('touchend',     () => _vhCancel());
@@ -547,7 +478,7 @@ function buildVidWall() {
     }
   };
 
-  // positioning handled by openVideos after screen is visible
+  // positioning handled by openVideos
 
 }
 
@@ -572,25 +503,16 @@ function vidGoTo(idx, instant = false) {
   if (!frame) return;
 
   const doPosition = () => {
-    const targetX = Math.round(
-      window.innerWidth / 2 - (frame.offsetLeft + frame.offsetWidth / 2)
-    );
+    const targetX = -(frame.offsetLeft - (window.innerWidth - frame.offsetWidth) / 2);
     wall.style.transition = instant ? 'none' : 'transform .6s cubic-bezier(.16,1,.3,1)';
     wall.style.transform  = `translateX(${targetX}px)`;
     const spot = document.getElementById('vid-spot');
     spot.style.transition = instant ? 'none' : 'left .6s cubic-bezier(.16,1,.3,1)';
-    spot.style.left = (window.innerWidth / 2) + 'px';
+    spot.style.left = (frame.offsetLeft + frame.offsetWidth / 2 + targetX) + 'px';
   };
 
-  if (instant) {
-    // double rAF ensures browser has painted the screen before measuring offsetLeft
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      doPosition();
-      moveWallSpot(galIdx, true);
-    }));
-  } else {
-    doPosition();
-  }
+  if (instant) { requestAnimationFrame(() => requestAnimationFrame(doPosition)); }
+  else { doPosition(); }
 
   document.getElementById('tv-ctr').textContent   = String(vidIdx + 1).padStart(2, '0') + ' / ' + String(vidFiles.length).padStart(2, '0');
   document.getElementById('vid-prog').style.width  = ((vidIdx + 1) / vidFiles.length * 100) + '%';
@@ -607,8 +529,6 @@ function vidGoTo(idx, instant = false) {
   }, delay);
 }
 
-// old vid hold code removed
-
 // drop lifted frame on channel change
 const _origVidGoTo = vidGoTo;
 
@@ -618,7 +538,7 @@ document.getElementById('vid-next').addEventListener('click', () => { if(!vidBus
 // channel switching via nav buttons and swipe only
 
 // swipe
-
+let vDS = null, vDr = false;
 document.getElementById('sc-tv').addEventListener('pointerdown', e => { vDS = e.clientX; vDr = true; });
 document.getElementById('sc-tv').addEventListener('pointerup',   e => {
   if (!vDr) return; vDr = false;
@@ -629,11 +549,9 @@ document.getElementById('sc-tv').addEventListener('pointerup',   e => {
   vDS = null;
 });
 
-/* ── PREVENT CONTEXT MENU ON LONG PRESS (mobile save image popup) ── */
+/* ── PREVENT LONG-PRESS SAVE IMAGE ON MOBILE ── */
 document.addEventListener('contextmenu', e => {
-  if (e.target.closest('#gal-wall, #vid-wall, .pic-frame, .vid-frame')) {
-    e.preventDefault();
-  }
+  if (e.target.closest('#gal-wall, #vid-wall, .pic-frame, .vid-frame')) e.preventDefault();
 });
 
 /* ── INIT ── */
@@ -645,8 +563,3 @@ loadData().then(() => {
     else if (saved === 'sc-tv') openVideos();
   }
 });
-
-/* ═══════════════════════════════
-   DEVTOOLS DETECTION
-═══════════════════════════════ */
-
