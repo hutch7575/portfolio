@@ -57,15 +57,7 @@ document.getElementById('theme-toggle').addEventListener('click', () => {
   document.getElementById('theme-toggle').querySelector('.icon').textContent = theme === 'dark' ? '☽' : '☀';
 });
 
-// mouse-follow subtle drift on landing spotlight
-document.getElementById('sc-cat').addEventListener('mousemove', e => {
-  const spot = document.getElementById('cat-spot');
-  const x = (e.clientX / window.innerWidth  * 100).toFixed(1);
-  const y = (e.clientY / window.innerHeight * 100).toFixed(1);
-  spot.style.animation = 'none';
-  spot.style.left = x + '%';
-  spot.style.top  = y + '%';
-});
+// spotlight stays centered (no mouse follow)
 
 /* ── 3. SCREEN NAVIGATION ── */
 function showScreen(id) {
@@ -162,15 +154,20 @@ function galGoTo(idx, instant = false) {
   const wall   = document.getElementById('gal-wall');
   const frames = wall.querySelectorAll('.pic-frame');
   frames.forEach((f, i) => { f.classList.toggle('active', i === galIdx); f.classList.toggle('dimmed', i !== galIdx); });
-  const frame = wall.children[galIdx];
-  if (!frame) return;
-  if (!instant) playSlide();
-  const targetX = -(frame.offsetLeft - (window.innerWidth - frame.offsetWidth) / 2);
-  wall.style.transition = instant ? 'none' : 'transform .78s cubic-bezier(.16,1,.3,1)';
-  wall.style.transform  = `translateX(${targetX}px)`;
-  moveWallSpot(galIdx, instant);
   document.getElementById('gal-ctr').textContent  = String(galIdx + 1).padStart(2, '0') + ' / ' + String(imgFiles.length).padStart(2, '0');
   document.getElementById('gal-prog').style.width = ((galIdx + 1) / imgFiles.length * 100) + '%';
+  if (!instant) playSlide();
+  // use rAF to ensure layout is painted before measuring (fixes widescreen off-centre bug)
+  const doPosition = () => {
+    const frame = wall.children[galIdx];
+    if (!frame) return;
+    const targetX = -(frame.offsetLeft - (window.innerWidth - frame.offsetWidth) / 2);
+    wall.style.transition = instant ? 'none' : 'transform .78s cubic-bezier(.16,1,.3,1)';
+    wall.style.transform  = `translateX(${targetX}px)`;
+    moveWallSpot(galIdx, instant);
+  };
+  if (instant) { requestAnimationFrame(() => requestAnimationFrame(doPosition)); }
+  else { doPosition(); }
 }
 
 function moveWallSpot(idx, instant = false) {
@@ -185,6 +182,16 @@ function moveWallSpot(idx, instant = false) {
   spot.style.left = cx + 'px';
   spot.style.top  = (vH * .46) + 'px';
 }
+
+// recenter on window resize
+window.addEventListener('resize', () => {
+  if (document.getElementById('sc-gallery').classList.contains('on')) {
+    galGoTo(galIdx, true);
+  }
+  if (document.getElementById('sc-tv').classList.contains('on')) {
+    vidGoTo(vidIdx, true);
+  }
+});
 
 document.getElementById('gal-prev').addEventListener('click', () => galGoTo(galIdx - 1));
 document.getElementById('gal-next').addEventListener('click', () => galGoTo(galIdx + 1));
