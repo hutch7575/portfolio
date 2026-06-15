@@ -549,7 +549,7 @@ function buildVidWall() {
     }
   };
 
-  vidGoTo(0, true);
+  // positioning handled by openVideos after screen is visible
 
 }
 
