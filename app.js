@@ -215,7 +215,12 @@ function galGoTo(idx, instant = false) {
   const doPosition = () => {
     const frame = wall.children[galIdx];
     if (!frame) return;
-    const targetX = -(frame.offsetLeft - (window.innerWidth - frame.offsetWidth) / 2);
+    // use getBoundingClientRect so padding/transform don't skew measurements
+    const rect = frame.getBoundingClientRect();
+    const frameCentreX = rect.left + rect.width / 2;
+    const screenCentreX = window.innerWidth / 2;
+    const currentTransform = new DOMMatrix(getComputedStyle(wall).transform).m41;
+    const targetX = currentTransform + (screenCentreX - frameCentreX);
     wall.style.transition = instant ? 'none' : 'transform .78s cubic-bezier(.16,1,.3,1)';
     wall.style.transform  = `translateX(${targetX}px)`;
     moveWallSpot(galIdx, instant);
@@ -236,13 +241,15 @@ function moveWallSpot(idx, instant = false) {
   const frame = wall.children[idx];
   if (!frame) return;
   const vW = window.innerWidth, vH = window.innerHeight;
-  const targetX = -(frame.offsetLeft - (vW - frame.offsetWidth) / 2);
-  const cx = frame.offsetLeft + frame.offsetWidth / 2 + targetX;
+  const rect = frame.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
   const spot = document.getElementById('wall-spot');
   spot.style.transition = instant ? 'none' : 'left .78s cubic-bezier(.16,1,.3,1), top .6s cubic-bezier(.16,1,.3,1)';
   spot.style.left = cx + 'px';
   spot.style.top  = (vH * .46) + 'px';
 }
+
+
 
 // recenter on window resize
 window.addEventListener('resize', () => {
@@ -567,12 +574,16 @@ function vidGoTo(idx, instant = false) {
   if (!frame) return;
 
   const doPosition = () => {
-    const targetX = -(frame.offsetLeft - (window.innerWidth - frame.offsetWidth) / 2);
+    const rect = frame.getBoundingClientRect();
+    const frameCentreX = rect.left + rect.width / 2;
+    const screenCentreX = window.innerWidth / 2;
+    const currentTransform = new DOMMatrix(getComputedStyle(wall).transform).m41;
+    const targetX = currentTransform + (screenCentreX - frameCentreX);
     wall.style.transition = instant ? 'none' : 'transform .6s cubic-bezier(.16,1,.3,1)';
     wall.style.transform  = `translateX(${targetX}px)`;
     const spot = document.getElementById('vid-spot');
     spot.style.transition = instant ? 'none' : 'left .6s cubic-bezier(.16,1,.3,1)';
-    spot.style.left = (frame.offsetLeft + frame.offsetWidth / 2 + targetX) + 'px';
+    spot.style.left = screenCentreX + 'px';
   };
 
   if (instant) {
