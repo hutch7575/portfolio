@@ -330,6 +330,16 @@ function dropFrame(frame) {
 
 /* ── 6. VIDEO GALLERY ── */
 let vidIdx = 0, vidBusy = false, vidLifted = null;
+let _vhRaf = null, _vhStart = null, _vhFrame = null, _vhProg = 0;
+function _vhCancel() {
+  if (_vhRaf) { cancelAnimationFrame(_vhRaf); _vhRaf = null; }
+  if (_vhFrame) {
+    _vhFrame.classList.remove('holding');
+    const rc = _vhFrame.querySelector('.hold-ring canvas');
+    if (rc) rc.getContext('2d').clearRect(0, 0, rc.width, rc.height);
+  }
+  _vhFrame = null; _vhStart = null; _vhProg = 0;
+}
 
 function openVideos() {
   buildVidWall();
@@ -409,17 +419,7 @@ function buildVidWall() {
     el.style.pointerEvents = 'none';
   });
 
-  // ── VIDEO HOLD TO REVEAL ──
-  let _vhRaf = null, _vhStart = null, _vhFrame = null, _vhProg = 0;
-  function _vhCancel() {
-    if (_vhRaf) { cancelAnimationFrame(_vhRaf); _vhRaf = null; }
-    if (_vhFrame) {
-      _vhFrame.classList.remove('holding');
-      const rc = _vhFrame.querySelector('.hold-ring canvas');
-      if (rc) rc.getContext('2d').clearRect(0, 0, rc.width, rc.height);
-    }
-    _vhFrame = null; _vhStart = null; _vhProg = 0;
-  }
+  // ── VIDEO HOLD TO REVEAL ── (vars at module scope, _vhCancel at module scope)
   function _vhAnimate() {
     if (!_vhFrame || !_vhStart) return;
     const mount = _vhFrame.querySelector('.vid-mount');
@@ -544,8 +544,8 @@ function vidGoTo(idx, instant = false) {
 // drop lifted frame on channel change
 const _origVidGoTo = vidGoTo;
 
-document.getElementById('vid-prev').addEventListener('click', () => { if(!vidBusy) { _vhCancel && _vhCancel(); vidGoTo(vidIdx - 1); } });
-document.getElementById('vid-next').addEventListener('click', () => { if(!vidBusy) { _vhCancel && _vhCancel(); vidGoTo(vidIdx + 1); } });
+document.getElementById('vid-prev').addEventListener('click', () => { if(!vidBusy) { _vhCancel(); vidGoTo(vidIdx - 1); } });
+document.getElementById('vid-next').addEventListener('click', () => { if(!vidBusy) { _vhCancel(); vidGoTo(vidIdx + 1); } });
 
 // channel switching via nav buttons and swipe only
 
