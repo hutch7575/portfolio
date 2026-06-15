@@ -372,10 +372,12 @@ function buildVidWall() {
 
     const scanlines = document.createElement('div');
     scanlines.className = 'vid-scanlines';
+    scanlines.style.pointerEvents = 'none';
     mount.appendChild(scanlines);
 
     const sc = document.createElement('canvas');
     sc.className = 'vid-static-canvas';
+    sc.style.pointerEvents = 'none';
     mount.appendChild(sc);
 
     const label = document.createElement('div');
@@ -400,6 +402,9 @@ function buildVidWall() {
     ring.className = 'hold-ring';
     ring.appendChild(document.createElement('canvas'));
     frame.appendChild(ring);
+
+    // wire up hold interaction
+    setupVidHold(frame, i);
     wall.appendChild(frame);
   });
 
@@ -481,12 +486,13 @@ let vidLifted = null;
 function setupVidHold(frame, idx) {
   let prog = 0, raf = null, startT = null;
 
-  // make video not capture pointer events so hold works
-  const vid = frame.querySelector('video');
-  if (vid) vid.style.pointerEvents = 'none';
+  // disable pointer events on all children so frame itself receives them
+  frame.querySelectorAll('video, canvas, .vid-scanlines, .vid-mount-label, .vid-mount-ch, .vid-mount-name').forEach(el => {
+    el.style.pointerEvents = 'none';
+  });
 
-  function startHold(e) {
-    if (idx !== vidIdx) return; // only active frame
+  function startHold() {
+    if (idx !== vidIdx) return;
     if (vidBusy) return;
     if (vidLifted === frame) { dropVidFrame(frame); return; }
     frame._holdFired = false;
@@ -498,7 +504,7 @@ function setupVidHold(frame, idx) {
     if (!frame.classList.contains('holding')) return;
     frame.classList.remove('holding');
     cancelAnimationFrame(raf);
-    if (prog < 1) prog = 0;
+    prog = 0;
   }
   function animVidRing() {
     const ringCanvas = frame.querySelector('.hold-ring canvas');
@@ -519,14 +525,26 @@ function setupVidHold(frame, idx) {
     drawRoundedRectPath(ctx, 0, 0, W, H, 8);
     ctx.stroke();
     ctx.setLineDash([]);
-    if (prog >= 1) { playHoldReady(); frame.classList.remove('holding'); liftVidFrame(frame); return; }
+    if (prog >= 1) {
+      playHoldReady();
+      frame.classList.remove('holding');
+      liftVidFrame(frame);
+      return;
+    }
     raf = requestAnimationFrame(animVidRing);
   }
-  frame.addEventListener('pointerdown',  e => { wakeAudio(); startHold(e); e.preventDefault(); });
-  frame.addEventListener('pointerup',    endHold);
-  frame.addEventListener('pointerleave', endHold);
-  frame.addEventListener('touchstart',   e => { wakeAudio(); startHold(e); }, { passive: false });
-  frame.addEventListener('touchend',     endHold);
+
+  // attach to the mount div (the visible area) rather than the whole frame
+  const mount = frame.querySelector('.vid-mount');
+  mount.style.pointerEvents = 'all'; // ensure mount receives events
+
+  mount.addEventListener('pointerdown', e => {
+    wakeAudio(); startHold(); e.preventDefault();
+  });
+  mount.addEventListener('pointerup',    () => endHold());
+  mount.addEventListener('pointerleave', () => endHold());
+  mount.addEventListener('touchstart',   e => { wakeAudio(); startHold(); e.preventDefault(); }, { passive: false });
+  mount.addEventListener('touchend',     () => endHold());
 }
 
 function liftVidFrame(frame) {
