@@ -214,15 +214,19 @@ function galGoTo(idx, instant = false) {
   const doPosition = () => {
     const frame = wall.children[galIdx];
     if (!frame) return;
-    // always reset to 0 first so measurement is from natural position
-    wall.style.transition = 'none';
-    wall.style.transform  = 'translateX(0px)';
-    void wall.offsetWidth; // force reflow
-    const r = frame.getBoundingClientRect();
-    const targetX = (window.innerWidth / 2) - (r.left + r.width / 2);
+    // offsetLeft is relative to parent (wall), unaffected by wall's transform.
+    // So: to centre the frame, shift wall so frame centre = screen centre.
+    // targetX = screenCentre - (frame.offsetLeft + frameWidth/2)
+    const targetX = Math.round(
+      window.innerWidth / 2 - (frame.offsetLeft + frame.offsetWidth / 2)
+    );
     wall.style.transition = instant ? 'none' : 'transform .78s cubic-bezier(.16,1,.3,1)';
     wall.style.transform  = `translateX(${targetX}px)`;
-    moveWallSpot(galIdx, instant);
+    // spotlight: centred on screen since frame is now centred
+    const spot = document.getElementById('wall-spot');
+    spot.style.transition = instant ? 'none' : 'left .78s cubic-bezier(.16,1,.3,1), top .6s cubic-bezier(.16,1,.3,1)';
+    spot.style.left = (window.innerWidth / 2) + 'px';
+    spot.style.top  = (window.innerHeight * 0.46) + 'px';
   };
   if (instant) {
     // double rAF ensures browser has painted the screen before measuring offsetLeft
@@ -236,17 +240,11 @@ function galGoTo(idx, instant = false) {
 }
 
 function moveWallSpot(idx, instant = false) {
-  const wall  = document.getElementById('gal-wall');
-  const frame = wall.children[idx];
-  if (!frame) return;
-  const vH = window.innerHeight;
-  // frame is already positioned correctly at this point, just read its centre
-  const rect = frame.getBoundingClientRect();
-  const cx = rect.left + rect.width / 2;
+  // active frame is always centred on screen, so spotlight = screen centre
   const spot = document.getElementById('wall-spot');
   spot.style.transition = instant ? 'none' : 'left .78s cubic-bezier(.16,1,.3,1), top .6s cubic-bezier(.16,1,.3,1)';
-  spot.style.left = cx + 'px';
-  spot.style.top  = (vH * .46) + 'px';
+  spot.style.left = (window.innerWidth / 2) + 'px';
+  spot.style.top  = (window.innerHeight * 0.46) + 'px';
 }
 
 
@@ -574,11 +572,9 @@ function vidGoTo(idx, instant = false) {
   if (!frame) return;
 
   const doPosition = () => {
-    wall.style.transition = 'none';
-    wall.style.transform  = 'translateX(0px)';
-    void wall.offsetWidth; // force reflow
-    const r = frame.getBoundingClientRect();
-    const targetX = (window.innerWidth / 2) - (r.left + r.width / 2);
+    const targetX = Math.round(
+      window.innerWidth / 2 - (frame.offsetLeft + frame.offsetWidth / 2)
+    );
     wall.style.transition = instant ? 'none' : 'transform .6s cubic-bezier(.16,1,.3,1)';
     wall.style.transform  = `translateX(${targetX}px)`;
     const spot = document.getElementById('vid-spot');
