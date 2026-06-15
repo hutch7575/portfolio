@@ -34,11 +34,16 @@ async function loadData() {
   document.getElementById('cat-img-count').textContent = `${imgFiles.length} piece${imgFiles.length !== 1 ? 's' : ''}`;
   document.getElementById('cat-vid-count').textContent = `${vidFiles.length} piece${vidFiles.length !== 1 ? 's' : ''}`;
 
-  // set first image as card bg preview
+  // set preview images on category cards
   if (imgFiles.length) {
     const bg = document.getElementById('cat-bg-images');
     bg.style.backgroundImage = `url(${RAW}/images/${imgFiles[0].name})`;
-    bg.classList.remove('gradient-a');
+    bg.classList.remove('no-preview');
+  }
+  if (vidFiles.length) {
+    const bg = document.getElementById('cat-bg-videos');
+    bg.style.backgroundImage = `url(${RAW}/videos/${vidFiles[0].name})`;
+    bg.classList.remove('no-preview');
   }
 }
 
@@ -50,6 +55,16 @@ document.getElementById('theme-toggle').addEventListener('click', () => {
   document.documentElement.setAttribute('data-theme', theme);
   document.getElementById('theme-label').textContent = theme === 'dark' ? 'Light' : 'Dark';
   document.getElementById('theme-toggle').querySelector('.icon').textContent = theme === 'dark' ? '☽' : '☀';
+});
+
+// mouse-follow subtle drift on landing spotlight
+document.getElementById('sc-cat').addEventListener('mousemove', e => {
+  const spot = document.getElementById('cat-spot');
+  const x = (e.clientX / window.innerWidth  * 100).toFixed(1);
+  const y = (e.clientY / window.innerHeight * 100).toFixed(1);
+  spot.style.animation = 'none';
+  spot.style.left = x + '%';
+  spot.style.top  = y + '%';
 });
 
 /* ── 3. SCREEN NAVIGATION ── */
