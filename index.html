@@ -176,17 +176,18 @@
     .slide-desc-text { font-size:.82rem; color:rgba(240,237,230,.55); line-height:1.6; font-weight:300; max-width:560px; }
     .slide-name { font-family:'DM Mono',monospace; font-size:.58rem; letter-spacing:.1em; color:rgba(240,237,230,.28); }
 
-    /* edit mode pencil button — subtle, bottom right of slide */
-    .slide-edit-btn {
-      position:absolute; bottom:1.6rem; right:2.5rem; z-index:5;
-      background:none; border:1px solid transparent;
-      font-family:'DM Mono',monospace; font-size:.58rem; letter-spacing:.1em;
-      text-transform:uppercase; color:rgba(168,85,247,.35);
-      padding:.3rem .6rem; border-radius:2px;
-      transition:color .2s, border-color .2s; display:none;
+    /* edit button — fixed position, outside carousel, shown in edit mode only */
+    #global-edit-btn {
+      position:fixed; bottom:1.6rem; right:2.5rem; z-index:500;
+      background:rgba(8,8,8,.75); border:1px solid rgba(168,85,247,.4);
+      font-family:'DM Mono',monospace; font-size:.6rem; letter-spacing:.12em;
+      text-transform:uppercase; color:rgba(168,85,247,.6);
+      padding:.45rem .9rem; border-radius:2px;
+      transition:color .2s, border-color .2s, background .2s;
+      display:none; backdrop-filter:blur(4px);
     }
-    .slide-edit-btn:hover { color:var(--accent); border-color:var(--accent); }
-    body.edit-mode .slide-edit-btn { display:block; }
+    #global-edit-btn:hover { color:var(--accent); border-color:var(--accent); background:rgba(8,8,8,.95); }
+    body.edit-mode #global-edit-btn { display:block; }
 
     /* nav arrows */
     .gallery-nav { position:fixed; top:50%; z-index:200; transform:translateY(-50%); background:none; border:none; color:var(--muted); font-size:2rem; padding:1.25rem; transition:color .2s, transform .2s; line-height:1; }
@@ -339,6 +340,7 @@
       <span id="gallery-title"></span>
       <span id="gallery-counter"></span>
     </div>
+    <button id="global-edit-btn" onclick="openEditForCurrent()">✎ Edit description</button>
     <div id="carousel-viewport">
       <div id="carousel"></div>
     </div>
@@ -607,12 +609,11 @@
       const nameEl=document.createElement('span'); nameEl.className='slide-name'; nameEl.textContent=file.name;
       descWrap.appendChild(descText); descWrap.appendChild(nameEl);
 
-      // edit button
-      const editBtn=document.createElement('button'); editBtn.className='slide-edit-btn'; editBtn.textContent='Edit description';
-      editBtn.addEventListener('click', ()=>openDescModal(descKey));
+      // store descKey on slide for global edit btn
+      slide.setAttribute('data-desc-key', descKey);
 
       slide.appendChild(blurBg); slide.appendChild(fadeL); slide.appendChild(fadeR);
-      slide.appendChild(vig); slide.appendChild(wrap); slide.appendChild(descWrap); slide.appendChild(editBtn);
+      slide.appendChild(vig); slide.appendChild(wrap); slide.appendChild(descWrap);
       carousel.appendChild(slide);
 
       // thumb
@@ -625,6 +626,11 @@
     });
 
     goTo(0, true);
+  }
+
+  function openEditForCurrent() {
+    const slide = document.querySelector(`.slide:nth-child(${currentIndex+1})`);
+    if (slide) openDescModal(slide.getAttribute('data-desc-key'));
   }
 
   function goTo(idx, instant=false) {
