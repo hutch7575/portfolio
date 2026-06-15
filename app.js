@@ -61,7 +61,21 @@ document.getElementById('theme-toggle').addEventListener('click', () => {
 
 /* ── 3. SCREEN NAVIGATION ── */
 function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id));
+  // save to session so refresh restores position
+  sessionStorage.setItem('jw_screen', id);
+  const current = document.querySelector('.screen.on');
+  const next = document.getElementById(id);
+  if (!next) return;
+  if (current && current !== next) {
+    // fade current out, then fade next in
+    current.classList.add('transitioning-out');
+    setTimeout(() => {
+      current.classList.remove('on', 'transitioning-out');
+      next.classList.add('on');
+    }, 280);
+  } else {
+    document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id));
+  }
 }
 
 document.getElementById('zone-img').addEventListener('click', () => { wakeAudio(); playWhoosh(); setTimeout(openGallery, 80); });
@@ -403,4 +417,45 @@ document.getElementById('sc-tv').addEventListener('pointerup',   e => {
 });
 
 /* ── INIT ── */
-loadData();
+loadData().then(() => {
+  // restore last screen after refresh
+  const saved = sessionStorage.getItem('jw_screen');
+  if (saved && saved !== 'sc-cat') {
+    if (saved === 'sc-gallery') openGallery();
+    else if (saved === 'sc-tv') openVideos();
+  }
+});
+
+/* ═══════════════════════════════
+   DEVTOOLS DETECTION
+═══════════════════════════════ */
+(function() {
+  const THRESHOLD = 160;
+  let devOpen = false;
+
+  function check() {
+    const widthDiff  = window.outerWidth  - window.innerWidth;
+    const heightDiff = window.outerHeight - window.innerHeight;
+    const isOpen = widthDiff > THRESHOLD || heightDiff > THRESHOLD;
+    if (isOpen && !devOpen) {
+      devOpen = true;
+      triggerDevtoolsWarning();
+    } else if (!isOpen) {
+      devOpen = false;
+    }
+  }
+
+  function triggerDevtoolsWarning() {
+    // show overlay
+    const overlay = document.getElementById('devtools-overlay');
+    if (overlay) {
+      overlay.classList.add('show');
+      setTimeout(() => {
+        sessionStorage.removeItem('jw_screen');
+        window.location.reload();
+      }, 2200);
+    }
+  }
+
+  setInterval(check, 800);
+})();
