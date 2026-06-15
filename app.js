@@ -347,9 +347,93 @@ function buildVidWall() {
       <span class="vid-mount-ch">CH ${String(i + 1).padStart(2, '0')}</span>
       <span class="vid-mount-name">${file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ')}</span>`;
     mount.appendChild(label);
+    // info panel — slides up on hold
+    const panel = document.createElement('div');
+    panel.className = 'pic-info-panel';
+    const desc = descs[file.name] || '';
+    panel.innerHTML = desc ? `<p class="pic-info-desc">${desc}</p>` : `<p class="pic-info-empty">No description yet.</p>`;
+    mount.appendChild(panel);
     frame.appendChild(mount);
+
+    // hold ring — overlays whole frame, pointer-events none so it doesn't block
+    const ring = document.createElement('div');
+    ring.className = 'hold-ring';
+    ring.style.pointerEvents = 'none';
+    const rc = document.createElement('canvas');
+    rc.style.pointerEvents = 'none';
+    ring.appendChild(rc);
+    frame.appendChild(ring);
+
     wall.appendChild(frame);
   });
+
+  // disable pointer events on video + overlays so pointerdown reaches the frame
+  wall.querySelectorAll('video, .vid-scanlines, .vid-static-canvas, .vid-mount-label').forEach(el => {
+    el.style.pointerEvents = 'none';
+  });
+
+  // ── HOLD TO REVEAL ──
+  let _vhRaf = null, _vhStart = null, _vhFrame = null, _vhProg = 0;
+
+  function _vhCancel() {
+    if (_vhRaf) { cancelAnimationFrame(_vhRaf); _vhRaf = null; }
+    if (_vhFrame) {
+      _vhFrame.classList.remove('holding');
+      const rc = _vhFrame.querySelector('.hold-ring canvas');
+      if (rc) rc.getContext('2d').clearRect(0, 0, rc.width, rc.height);
+    }
+    _vhFrame = null; _vhStart = null; _vhProg = 0;
+  }
+
+  function _vhAnimate() {
+    if (!_vhFrame || !_vhStart) return;
+    const mount = _vhFrame.querySelector('.vid-mount');
+    const rc = _vhFrame.querySelector('.hold-ring canvas');
+    if (!mount || !rc) return;
+    const W = mount.offsetWidth + 20, H = mount.offsetHeight + 20;
+    if (rc.width !== W || rc.height !== H) { rc.width = W; rc.height = H; }
+    _vhProg = Math.min(1, (Date.now() - _vhStart) / 800);
+    if (_vhProg > .32 && _vhProg < .36) playHoldTick();
+    if (_vhProg > .65 && _vhProg < .69) playHoldTick();
+    const ctx = rc.getContext('2d');
+    ctx.clearRect(0, 0, W, H);
+    const total = 2 * (W + H) - 8 * 8 + 2 * Math.PI * 8;
+    ctx.strokeStyle = `rgba(247,37,133,${0.4 + _vhProg * 0.5})`;
+    ctx.lineWidth = 2; ctx.lineCap = 'round';
+    ctx.setLineDash([_vhProg * total, total]);
+    drawRoundedRectPath(ctx, 0, 0, W, H, 8);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    if (_vhProg >= 1) {
+      playHoldReady();
+      _vhFrame.classList.remove('holding');
+      if (_vhFrame.classList.contains('lifted')) {
+        _vhFrame.classList.remove('lifted', 'lifting');
+        if (vidLifted === _vhFrame) vidLifted = null;
+      } else {
+        if (vidLifted && vidLifted !== _vhFrame) vidLifted.classList.remove('lifted', 'lifting');
+        _vhFrame.classList.add('lifted', 'lifting');
+        vidLifted = _vhFrame;
+        playLift();
+      }
+      _vhCancel(); return;
+    }
+    _vhRaf = requestAnimationFrame(_vhAnimate);
+  }
+
+  wall.addEventListener('pointerdown', e => {
+    const frame = e.target.closest('.vid-frame');
+    if (!frame) return;
+    if (parseInt(frame.dataset.idx) !== vidIdx) return;
+    wakeAudio(); _vhCancel();
+    _vhFrame = frame; _vhStart = Date.now();
+    frame.classList.add('holding');
+    _vhRaf = requestAnimationFrame(_vhAnimate);
+    e.preventDefault();
+  }, { passive: false });
+
+  wall.addEventListener('pointerup',    () => _vhCancel());
+  wall.addEventListener('pointerleave', () => _vhCancel());
 
   // audio toggle
   document.getElementById('vid-audio-btn').onclick = () => {
@@ -448,8 +532,8 @@ function showVidStatic(frame, vid) {
   })();
 }
 
-document.getElementById('vid-prev').addEventListener('click', () => { if(!vidBusy) vidGoTo(vidIdx - 1); });
-document.getElementById('vid-next').addEventListener('click', () => { if(!vidBusy) vidGoTo(vidIdx + 1); });
+document.getElementById('vid-prev').addEventListener('click', () => { if(!vidBusy) { if(vidLifted){vidLifted.classList.remove('lifted','lifting');vidLifted=null;} vidGoTo(vidIdx - 1); } });
+document.getElementById('vid-next').addEventListener('click', () => { if(!vidBusy) { if(vidLifted){vidLifted.classList.remove('lifted','lifting');vidLifted=null;} vidGoTo(vidIdx + 1); } });
 
 // click on active video mount to change channel
 document.getElementById('sc-tv').addEventListener('click', e => {
