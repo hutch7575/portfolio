@@ -138,8 +138,11 @@ let galIdx = 0, galLifted = null;
 function openGallery() {
   buildWall();
   showScreen('sc-gallery');
-  setTimeout(() => moveWallSpot(galIdx, true), 120);
-  showNavHint('gal-hint');
+  // wait for screen to be visible and laid out before measuring positions
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    galGoTo(0, true);
+    showNavHint('gal-hint');
+  }));
 }
 
 function buildWall() {
@@ -217,8 +220,15 @@ function galGoTo(idx, instant = false) {
     wall.style.transform  = `translateX(${targetX}px)`;
     moveWallSpot(galIdx, instant);
   };
-  if (instant) { requestAnimationFrame(() => requestAnimationFrame(doPosition)); }
-  else { doPosition(); }
+  if (instant) {
+    // double rAF ensures browser has painted the screen before measuring offsetLeft
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      doPosition();
+      moveWallSpot(galIdx, true);
+    }));
+  } else {
+    doPosition();
+  }
 }
 
 function moveWallSpot(idx, instant = false) {
@@ -236,12 +246,14 @@ function moveWallSpot(idx, instant = false) {
 
 // recenter on window resize
 window.addEventListener('resize', () => {
-  if (document.getElementById('sc-gallery').classList.contains('on')) {
-    galGoTo(galIdx, true);
-  }
-  if (document.getElementById('sc-tv').classList.contains('on')) {
-    vidGoTo(vidIdx, true);
-  }
+  requestAnimationFrame(() => {
+    if (document.getElementById('sc-gallery').classList.contains('on')) {
+      galGoTo(galIdx, true);
+    }
+    if (document.getElementById('sc-tv').classList.contains('on')) {
+      vidGoTo(vidIdx, true);
+    }
+  });
 });
 
 document.getElementById('gal-prev').addEventListener('click', () => galGoTo(galIdx - 1));
@@ -374,7 +386,11 @@ function _vhCancel() {
 function openVideos() {
   buildVidWall();
   showScreen('sc-tv');
-  showNavHint('vid-hint');
+  // wait for screen to be visible and laid out before measuring positions
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    vidGoTo(0, true);
+    showNavHint('vid-hint');
+  }));
 }
 
 let vidMuted = true; // tracks audio state
@@ -559,8 +575,15 @@ function vidGoTo(idx, instant = false) {
     spot.style.left = (frame.offsetLeft + frame.offsetWidth / 2 + targetX) + 'px';
   };
 
-  if (instant) { requestAnimationFrame(() => requestAnimationFrame(doPosition)); }
-  else { doPosition(); }
+  if (instant) {
+    // double rAF ensures browser has painted the screen before measuring offsetLeft
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      doPosition();
+      moveWallSpot(galIdx, true);
+    }));
+  } else {
+    doPosition();
+  }
 
   document.getElementById('tv-ctr').textContent   = String(vidIdx + 1).padStart(2, '0') + ' / ' + String(vidFiles.length).padStart(2, '0');
   document.getElementById('vid-prog').style.width  = ((vidIdx + 1) / vidFiles.length * 100) + '%';
