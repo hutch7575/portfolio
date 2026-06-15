@@ -539,73 +539,7 @@ function vidGoTo(idx, instant = false) {
   }, delay);
 }
 
-// static removed — clean transitions only
-
-let vidLifted = null;
-
-function setupVidHold(frame, idx) {
-  let prog = 0, raf = null, startT = null;
-
-  // make video not capture pointer events so hold works
-  const vid = frame.querySelector('video');
-  if (vid) vid.style.pointerEvents = 'none';
-
-  function startHold(e) {
-    if (idx !== vidIdx) return; // only active frame
-    if (vidBusy) return;
-    if (vidLifted === frame) { dropVidFrame(frame); return; }
-    frame._holdFired = false;
-    frame.classList.add('holding');
-    prog = 0; startT = Date.now();
-    animVidRing();
-  }
-  function endHold() {
-    if (!frame.classList.contains('holding')) return;
-    frame.classList.remove('holding');
-    cancelAnimationFrame(raf);
-    if (prog < 1) prog = 0;
-  }
-  function animVidRing() {
-    const ringCanvas = frame.querySelector('.hold-ring canvas');
-    if (!ringCanvas) return;
-    const mount = frame.querySelector('.vid-mount');
-    const W = mount.offsetWidth + 20, H = mount.offsetHeight + 20;
-    ringCanvas.width = W; ringCanvas.height = H;
-    prog = Math.min(1, (Date.now() - startT) / 700);
-    if (prog > .32 && prog < .35) playHoldTick();
-    if (prog > .65 && prog < .68) playHoldTick();
-    const ctx = ringCanvas.getContext('2d');
-    ctx.clearRect(0, 0, W, H);
-    const total = 2 * (W + H) - 8 * 8 + 2 * Math.PI * 8;
-    const drawn = prog * total;
-    ctx.strokeStyle = `rgba(247,37,133,${.4 + prog * .5})`;
-    ctx.lineWidth = 2; ctx.lineCap = 'round';
-    ctx.setLineDash([drawn, total]);
-    drawRoundedRectPath(ctx, 0, 0, W, H, 8);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    if (prog >= 1) { playHoldReady(); frame.classList.remove('holding'); liftVidFrame(frame); return; }
-    raf = requestAnimationFrame(animVidRing);
-  }
-  frame.addEventListener('pointerdown',  e => { wakeAudio(); startHold(e); e.preventDefault(); });
-  frame.addEventListener('pointerup',    endHold);
-  frame.addEventListener('pointerleave', endHold);
-  frame.addEventListener('touchstart',   e => { wakeAudio(); startHold(e); }, { passive: false });
-  frame.addEventListener('touchend',     endHold);
-}
-
-function liftVidFrame(frame) {
-  if (vidLifted && vidLifted !== frame) dropVidFrame(vidLifted);
-  frame.classList.add('lifted', 'lifting');
-  frame._holdFired = true;
-  vidLifted = frame;
-  playLift();
-  setTimeout(() => { frame._holdFired = false; }, 250);
-}
-function dropVidFrame(frame) {
-  frame.classList.remove('lifted', 'lifting');
-  vidLifted = null;
-}
+// old vid hold code removed
 
 // drop lifted frame on channel change
 const _origVidGoTo = vidGoTo;
