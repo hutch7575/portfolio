@@ -299,6 +299,8 @@ function openVideos() {
   showScreen('sc-tv');
 }
 
+let vidMuted = true; // tracks audio state
+
 function buildVidWall() {
   const wall = document.getElementById('vid-wall');
   wall.innerHTML = ''; vidIdx = 0;
@@ -310,10 +312,12 @@ function buildVidWall() {
     wall.appendChild(empty);
     document.getElementById('vid-prev').style.visibility = 'hidden';
     document.getElementById('vid-next').style.visibility = 'hidden';
+    document.getElementById('vid-controls').style.display = 'none';
     return;
   }
   document.getElementById('vid-prev').style.visibility = '';
   document.getElementById('vid-next').style.visibility = '';
+  document.getElementById('vid-controls').style.display = 'flex';
 
   vidFiles.forEach((file, i) => {
     const url   = `${RAW}/videos/${file.name}`;
@@ -343,10 +347,28 @@ function buildVidWall() {
       <span class="vid-mount-name">${file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ')}</span>`;
     mount.appendChild(label);
     frame.appendChild(mount);
-
-    mount.addEventListener('click', () => { if (!vidBusy) vidGoTo((vidIdx + 1) % vidFiles.length); });
     wall.appendChild(frame);
   });
+
+  // audio toggle
+  document.getElementById('vid-audio-btn').onclick = () => {
+    vidMuted = !vidMuted;
+    const vid = document.querySelector('.vid-frame.active video');
+    if (vid) vid.muted = vidMuted;
+    document.getElementById('vid-audio-btn').textContent = vidMuted ? '🔇' : '🔊';
+  };
+
+  // fullscreen toggle
+  document.getElementById('vid-fs-btn').onclick = () => {
+    const frame = document.querySelector('.vid-frame.active');
+    const vid = frame ? frame.querySelector('video') : null;
+    if (!vid) return;
+    if (!document.fullscreenElement) {
+      vid.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen();
+    }
+  };
 
   vidGoTo(0, true);
   const hint = document.getElementById('vid-click-hint');
@@ -355,57 +377,89 @@ function buildVidWall() {
 }
 
 function vidGoTo(idx, instant = false) {
+  if (vidBusy && !instant) return;
   vidIdx = ((idx % vidFiles.length) + vidFiles.length) % vidFiles.length;
   const wall   = document.getElementById('vid-wall');
   const frames = wall.querySelectorAll('.vid-frame');
+
+  // pause all
+  frames.forEach(f => { const v = f.querySelector('video'); if (v) { v.pause(); v.currentTime = 0; } });
+
+  if (!instant) {
+    playStaticBurst();
+    // show static on current frame while sliding
+    const curFrame = wall.querySelector('.vid-frame.active');
+    if (curFrame) showVidStatic(curFrame, null);
+  }
+
+  // update classes
   frames.forEach((f, i) => {
     f.classList.toggle('active', i === vidIdx);
     f.classList.toggle('dimmed', i !== vidIdx);
-    const v = f.querySelector('video');
-    if (i === vidIdx) { if (!instant) showVidStatic(f, v); else if (v) v.play().catch(() => {}); }
-    else if (v) v.pause();
   });
+
   const frame = wall.children[vidIdx];
   if (!frame) return;
-  if (!instant) playStaticBurst();
-  const targetX = -(frame.offsetLeft - (window.innerWidth - frame.offsetWidth) / 2);
-  wall.style.transition = instant ? 'none' : 'transform .78s cubic-bezier(.16,1,.3,1)';
-  wall.style.transform  = `translateX(${targetX}px)`;
-  document.getElementById('tv-ctr').textContent  = String(vidIdx + 1).padStart(2, '0') + ' / ' + String(vidFiles.length).padStart(2, '0');
-  document.getElementById('vid-prog').style.width = ((vidIdx + 1) / vidFiles.length * 100) + '%';
-  const spot = document.getElementById('vid-spot');
-  spot.style.transition = instant ? 'none' : 'left .78s cubic-bezier(.16,1,.3,1)';
-  spot.style.left = (frame.offsetLeft + frame.offsetWidth / 2 + targetX) + 'px';
+
+  const doPosition = () => {
+    const targetX = -(frame.offsetLeft - (window.innerWidth - frame.offsetWidth) / 2);
+    wall.style.transition = instant ? 'none' : 'transform .6s cubic-bezier(.16,1,.3,1)';
+    wall.style.transform  = `translateX(${targetX}px)`;
+    const spot = document.getElementById('vid-spot');
+    spot.style.transition = instant ? 'none' : 'left .6s cubic-bezier(.16,1,.3,1)';
+    spot.style.left = (frame.offsetLeft + frame.offsetWidth / 2 + targetX) + 'px';
+  };
+
+  if (instant) { requestAnimationFrame(() => requestAnimationFrame(doPosition)); }
+  else { doPosition(); }
+
+  document.getElementById('tv-ctr').textContent   = String(vidIdx + 1).padStart(2, '0') + ' / ' + String(vidFiles.length).padStart(2, '0');
+  document.getElementById('vid-prog').style.width  = ((vidIdx + 1) / vidFiles.length * 100) + '%';
+
+  // play new video after static clears
+  const delay = instant ? 0 : 350;
+  setTimeout(() => {
+    const newVid = frame.querySelector('video');
+    if (newVid) {
+      newVid.muted = vidMuted;
+      newVid.play().catch(() => {});
+    }
+    vidBusy = false;
+  }, delay);
 }
 
 function showVidStatic(frame, vid) {
   vidBusy = true;
   const sc  = frame.querySelector('.vid-static-canvas');
   const el  = frame.querySelector('.vid-mount');
-  if (!sc || !el) return;
-  sc.width = el.offsetWidth; sc.height = el.offsetHeight;
+  if (!sc || !el) { vidBusy = false; return; }
+  sc.width = el.offsetWidth || 900;
+  sc.height = el.offsetHeight || 560;
   sc.style.opacity = '1';
   const ctx = sc.getContext('2d');
-  let af;
+  let af, frames = 0;
   (function ds() {
+    frames++;
     const id = ctx.createImageData(sc.width, sc.height);
     for (let i = 0; i < id.data.length; i += 4) {
       const v = Math.random() * 255 | 0;
-      id.data[i] = v; id.data[i + 1] = v; id.data[i + 2] = v; id.data[i + 3] = 160 + Math.random() * 80;
+      id.data[i] = v; id.data[i+1] = v; id.data[i+2] = v;
+      id.data[i+3] = frames < 4 ? 220 : Math.max(0, 220 - (frames-4)*40);
     }
     ctx.putImageData(id, 0, 0);
-    af = requestAnimationFrame(ds);
+    if (frames < 10) af = requestAnimationFrame(ds);
+    else { sc.style.opacity = '0'; if (vid) { vid.muted = vidMuted; vid.play().catch(()=>{}); } }
   })();
-  setTimeout(() => {
-    cancelAnimationFrame(af);
-    sc.style.opacity = '0';
-    if (vid) vid.play().catch(() => {});
-    vidBusy = false;
-  }, 220);
 }
 
-document.getElementById('vid-prev').addEventListener('click', () => vidGoTo(vidIdx - 1));
-document.getElementById('vid-next').addEventListener('click', () => vidGoTo(vidIdx + 1));
+document.getElementById('vid-prev').addEventListener('click', () => { if(!vidBusy) vidGoTo(vidIdx - 1); });
+document.getElementById('vid-next').addEventListener('click', () => { if(!vidBusy) vidGoTo(vidIdx + 1); });
+
+// click on active video mount to change channel
+document.getElementById('sc-tv').addEventListener('click', e => {
+  const mount = e.target.closest('.vid-mount');
+  if (mount && !vidBusy) vidGoTo(vidIdx + 1);
+});
 
 // swipe
 let vDS = null, vDr = false;
