@@ -513,38 +513,6 @@ html, body {
   *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; }
 }
 
-/* ── DEVTOOLS WARNING ── */
-#devtools-overlay {
-  position: fixed; inset: 0; z-index: 99999;
-  background: var(--bg-main);
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 1.25rem;
-  opacity: 0; pointer-events: none;
-  transition: opacity .3s;
-}
-#devtools-overlay.show { opacity: 1; pointer-events: all; }
-#devtools-overlay .dv-icon {
-  font-size: 2.5rem; line-height: 1;
-}
-#devtools-overlay .dv-title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: clamp(2rem, 5vw, 3.5rem);
-  letter-spacing: .08em; color: var(--text);
-}
-#devtools-overlay .dv-sub {
-  font-family: 'DM Mono', monospace;
-  font-size: .68rem; letter-spacing: .18em;
-  text-transform: uppercase; color: var(--text3);
-}
-#devtools-overlay .dv-pink {
-  color: var(--pink);
-  font-family: 'DM Mono', monospace;
-  font-size: .6rem; letter-spacing: .15em;
-  text-transform: uppercase;
-}
-
-/* ── VIDEO CONTROLS ── */
 #vid-controls {
   position: fixed; bottom: 1.6rem; right: 2.5rem; z-index: 50;
   display: flex; align-items: center; gap: .6rem;
