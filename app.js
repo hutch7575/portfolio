@@ -248,11 +248,35 @@ document.getElementById('gal-prev').addEventListener('click', () => galGoTo(galI
 document.getElementById('gal-next').addEventListener('click', () => galGoTo(galIdx + 1));
 
 // swipe
-let gDS = null, gDr = false;
-document.getElementById('sc-gallery').addEventListener('pointerdown', e => { gDS = e.clientX; gDr = true; });
-document.getElementById('sc-gallery').addEventListener('pointerup',   e => {
+
+// Gallery swipe — pointer events for desktop, touch for mobile
+let gDS = null, gDY = null, gDr = false;
+document.getElementById('sc-gallery').addEventListener('touchstart', e => {
+  gDS = e.touches[0].clientX; gDY = e.touches[0].clientY; gDr = true;
+}, { passive: true });
+document.getElementById('sc-gallery').addEventListener('touchmove', e => {
+  if (!gDr || gDS === null) return;
+  const dx = e.touches[0].clientX - gDS;
+  const dy = e.touches[0].clientY - gDY;
+  // if clearly horizontal swipe, prevent page scroll
+  if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10) {
+    e.preventDefault();
+  }
+}, { passive: false });
+document.getElementById('sc-gallery').addEventListener('touchend', e => {
   if (!gDr) return; gDr = false;
-  if (Math.abs(e.clientX - gDS) > 65) galGoTo(e.clientX < gDS ? galIdx + 1 : galIdx - 1);
+  const dx = e.changedTouches[0].clientX - gDS;
+  if (Math.abs(dx) > 55) galGoTo(dx < 0 ? galIdx + 1 : galIdx - 1);
+  gDS = null; gDY = null;
+});
+// desktop mouse swipe
+document.getElementById('sc-gallery').addEventListener('pointerdown', e => {
+  if (e.pointerType === 'touch') return; // handled above
+  gDS = e.clientX; gDr = true;
+});
+document.getElementById('sc-gallery').addEventListener('pointerup', e => {
+  if (e.pointerType === 'touch' || !gDr) return; gDr = false;
+  if (Math.abs(e.clientX - gDS) > 55) galGoTo(e.clientX < gDS ? galIdx + 1 : galIdx - 1);
   gDS = null;
 });
 
@@ -299,9 +323,15 @@ function setupHold(frame, idx) {
     raf = requestAnimationFrame(animRing);
   }
 
-  frame.addEventListener('pointerdown',  e => { wakeAudio(); startHold(); e.preventDefault(); });
+  frame.addEventListener('pointerdown',  e => {
+    if (e.pointerType === 'touch') return; // handled by touchstart
+    wakeAudio(); startHold(); e.preventDefault();
+  });
+  frame.addEventListener('touchstart', e => { wakeAudio(); startHold(); }, { passive: true });
   frame.addEventListener('pointerup',    endHold);
   frame.addEventListener('pointerleave', endHold);
+  frame.addEventListener('touchend',     endHold);
+  frame.addEventListener('touchcancel',  endHold);
 }
 
 function drawRoundedRectPath(ctx, x, y, w, h, r) {
@@ -455,18 +485,26 @@ function buildVidWall() {
     }
     _vhRaf = requestAnimationFrame(_vhAnimate);
   }
-  wall.addEventListener('pointerdown', e => {
-    const frame = e.target.closest('.vid-frame');
+  function startVidHold(frame) {
     if (!frame) return;
     if (parseInt(frame.dataset.idx) !== vidIdx) return;
     wakeAudio(); _vhCancel();
     _vhFrame = frame; _vhStart = Date.now();
     frame.classList.add('holding');
     _vhRaf = requestAnimationFrame(_vhAnimate);
-    e.preventDefault();
+  }
+  wall.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'touch') return; // handled by touchstart
+    const frame = e.target.closest('.vid-frame');
+    startVidHold(frame); e.preventDefault();
   }, { passive: false });
+  wall.addEventListener('touchstart', e => {
+    const frame = e.target.closest('.vid-frame');
+    if (frame) startVidHold(frame);
+  }, { passive: true });
   wall.addEventListener('pointerup',    () => _vhCancel());
   wall.addEventListener('pointercancel',() => _vhCancel());
+  wall.addEventListener('touchend',     () => _vhCancel());
 
   // audio toggle
   document.getElementById('vid-audio-btn').onclick = () => {
@@ -550,7 +588,7 @@ document.getElementById('vid-next').addEventListener('click', () => { if(!vidBus
 // channel switching via nav buttons and swipe only
 
 // swipe
-let vDS = null, vDr = false;
+
 document.getElementById('sc-tv').addEventListener('pointerdown', e => { vDS = e.clientX; vDr = true; });
 document.getElementById('sc-tv').addEventListener('pointerup',   e => {
   if (!vDr) return; vDr = false;
@@ -559,6 +597,13 @@ document.getElementById('sc-tv').addEventListener('pointerup',   e => {
     vidGoTo(e.clientX < vDS ? vidIdx + 1 : vidIdx - 1);
   }
   vDS = null;
+});
+
+/* ── PREVENT CONTEXT MENU ON LONG PRESS (mobile save image popup) ── */
+document.addEventListener('contextmenu', e => {
+  if (e.target.closest('#gal-wall, #vid-wall, .pic-frame, .vid-frame')) {
+    e.preventDefault();
+  }
 });
 
 /* ── INIT ── */
