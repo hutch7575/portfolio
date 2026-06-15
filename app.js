@@ -198,8 +198,7 @@ function buildWall() {
 
     wall.appendChild(frame);
   });
-
-  galGoTo(0, true);
+  // positioning handled by openGallery after screen is visible
 }
 
 function galGoTo(idx, instant = false) {
@@ -215,14 +214,12 @@ function galGoTo(idx, instant = false) {
   const doPosition = () => {
     const frame = wall.children[galIdx];
     if (!frame) return;
-    // reset transform so we measure natural offsetLeft, then calc correct shift
+    // always reset to 0 first so measurement is from natural position
     wall.style.transition = 'none';
-    wall.style.transform  = 'translateX(0)';
-    // force reflow so measurement reflects the reset
-    void wall.offsetWidth;
-    const naturalLeft = frame.getBoundingClientRect().left;
-    const naturalCentre = naturalLeft + frame.getBoundingClientRect().width / 2;
-    const targetX = window.innerWidth / 2 - naturalCentre;
+    wall.style.transform  = 'translateX(0px)';
+    void wall.offsetWidth; // force reflow
+    const r = frame.getBoundingClientRect();
+    const targetX = (window.innerWidth / 2) - (r.left + r.width / 2);
     wall.style.transition = instant ? 'none' : 'transform .78s cubic-bezier(.16,1,.3,1)';
     wall.style.transform  = `translateX(${targetX}px)`;
     moveWallSpot(galIdx, instant);
@@ -577,13 +574,11 @@ function vidGoTo(idx, instant = false) {
   if (!frame) return;
 
   const doPosition = () => {
-    // reset transform, measure natural position, then shift to centre
     wall.style.transition = 'none';
-    wall.style.transform  = 'translateX(0)';
-    void wall.offsetWidth;
-    const rect = frame.getBoundingClientRect();
-    const naturalCentre = rect.left + rect.width / 2;
-    const targetX = window.innerWidth / 2 - naturalCentre;
+    wall.style.transform  = 'translateX(0px)';
+    void wall.offsetWidth; // force reflow
+    const r = frame.getBoundingClientRect();
+    const targetX = (window.innerWidth / 2) - (r.left + r.width / 2);
     wall.style.transition = instant ? 'none' : 'transform .6s cubic-bezier(.16,1,.3,1)';
     wall.style.transform  = `translateX(${targetX}px)`;
     const spot = document.getElementById('vid-spot');
