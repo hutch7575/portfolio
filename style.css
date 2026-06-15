@@ -73,148 +73,177 @@ html, body {
 /* ── 3. LANDING PAGE ── */
 #sc-cat {
   z-index: 80;
-  background: var(--bg-main);
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr auto;
+  background: var(--wall);
+  overflow: hidden;
   transition: background .35s;
 }
 
-/* left panel — name + info */
-.cat-left {
-  grid-column: 1; grid-row: 1;
+/* same subtle texture as gallery */
+#sc-cat::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  background-image:
+    radial-gradient(ellipse at 12% 50%, rgba(0,0,0,.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 88% 50%, rgba(0,0,0,.05) 0%, transparent 50%);
+}
+/* same edge fade as gallery */
+#sc-cat::after {
+  content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  background: linear-gradient(to right, var(--wall2) 0%, transparent 13%, transparent 87%, var(--wall2) 100%);
+}
+
+/* ambient spotlight — same token as gallery */
+#cat-spot {
+  position: absolute; z-index: 1; pointer-events: none;
+  width: 900px; height: 900px; border-radius: 50%;
+  top: 50%; left: 50%;
+  background: radial-gradient(circle, var(--light-beam) 0%, var(--light-tint) 35%, transparent 70%);
+  transform: translate(-50%, -50%);
+  mix-blend-mode: screen;
+  animation: spotDrift 12s ease-in-out infinite alternate;
+}
+[data-theme="light"] #cat-spot { mix-blend-mode: multiply; }
+@keyframes spotDrift {
+  0%   { left: 42%; top: 48%; }
+  50%  { left: 55%; top: 52%; }
+  100% { left: 48%; top: 47%; }
+}
+
+/* header strip — same as gallery bar */
+#cat-bar {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 10;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.5rem 2.5rem;
+  background: linear-gradient(to bottom, var(--wall) 0%, transparent 100%);
+  transition: background .35s;
+}
+.cat-bar-logo {
+  font-family: 'DM Mono', monospace; font-size: .68rem;
+  letter-spacing: .18em; text-transform: uppercase; color: var(--text3);
+}
+
+/* main layout — everything centred on the wall */
+.cat-wall-content {
+  position: absolute; inset: 0; z-index: 3;
   display: flex; flex-direction: column;
-  justify-content: space-between;
-  padding: 2.5rem 3rem;
-  border-right: 1px solid var(--border);
-  position: relative; overflow: hidden;
+  align-items: center; justify-content: center;
+  gap: 3.5rem;
+  padding: 5rem 2rem 4rem;
 }
 
-.cat-left-top {
-  display: flex; flex-direction: column; gap: .4rem;
+/* name plate — mounted on the wall, same mount treatment as pic-mount */
+.cat-nameplate {
+  background: var(--frame-bg);
+  padding: 2rem 3.5rem;
+  box-shadow: 0 20px 60px var(--shadow), 0 4px 16px rgba(0,0,0,.3), 0 0 0 1px var(--border);
+  position: relative;
+  text-align: center;
+  transition: background .35s, box-shadow .35s;
 }
-.cat-eyebrow {
-  font-family: 'DM Mono', monospace;
-  font-size: .62rem; letter-spacing: .22em;
-  text-transform: uppercase; color: var(--pink);
+.cat-nameplate::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
 }
-.cat-tagline {
-  font-family: 'DM Mono', monospace;
-  font-size: .62rem; letter-spacing: .14em;
-  text-transform: uppercase; color: var(--text3);
-}
+[data-theme="light"] .cat-nameplate::after { box-shadow: inset 0 1px 0 rgba(255,255,255,.5); }
 
-/* big name */
-.cat-name {
+.cat-nameplate-eyebrow {
+  font-family: 'DM Mono', monospace; font-size: .6rem;
+  letter-spacing: .25em; text-transform: uppercase;
+  color: var(--pink); margin-bottom: .75rem; display: block;
+}
+.cat-nameplate-name {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: clamp(4.5rem, 10vw, 10rem);
-  line-height: .88; letter-spacing: .01em;
-  color: var(--text);
-  position: relative; z-index: 1;
+  font-size: clamp(3.5rem, 8vw, 8rem);
+  letter-spacing: .04em; line-height: .88;
+  color: var(--text); display: block;
 }
-.cat-name span { color: var(--pink); }
-
-/* ghost watermark */
-.cat-ghost {
-  position: absolute; bottom: -1.5rem; left: -1rem;
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 22vw; line-height: 1;
-  color: var(--wall2); pointer-events: none;
-  user-select: none; z-index: 0;
-  letter-spacing: -.02em;
-  transition: color .35s;
+.cat-nameplate-name span { color: var(--pink); }
+.cat-nameplate-sub {
+  display: block; margin-top: .9rem;
+  font-size: .78rem; color: var(--text3);
+  font-weight: 300; letter-spacing: .02em;
+  line-height: 1.6;
 }
 
-.cat-left-bottom {
-  display: flex; flex-direction: column; gap: 1.2rem;
-  position: relative; z-index: 1;
+/* nameplate label strip — identical to pic-mount-label */
+.cat-nameplate-label {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 40px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 1.25rem; border-top: 1px solid var(--border);
 }
-.cat-desc {
-  font-size: .85rem; color: var(--text3);
-  line-height: 1.75; max-width: 300px; font-weight: 300;
+.cat-nameplate-label span {
+  font-family: 'DM Mono', monospace; font-size: .55rem;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--text3);
 }
-.cat-tags { display: flex; gap: .4rem; flex-wrap: wrap; }
-.cat-tag {
-  font-family: 'DM Mono', monospace;
-  font-size: .56rem; letter-spacing: .1em; text-transform: uppercase;
-  border: 1px solid var(--border); color: var(--text3);
-  padding: .26rem .55rem; border-radius: 2px;
-  transition: border-color .2s, color .2s;
-}
-.cat-tag:hover { border-color: var(--pink); color: var(--pink); }
+.cat-nameplate-label .dot { color: var(--pink); }
 
-/* right panel — category cards */
-.cat-right {
-  grid-column: 2; grid-row: 1;
-  display: flex; flex-direction: column;
+/* category cards row — same mount style */
+.cat-cards {
+  display: flex; gap: 2.5rem; align-items: stretch;
 }
 
 .cat-card {
-  flex: 1; position: relative; overflow: hidden;
-  display: flex; align-items: flex-end;
-  padding: 2.5rem;
-  transition: flex .5s cubic-bezier(.16,1,.3,1);
-  border-bottom: 1px solid var(--border);
+  position: relative; overflow: hidden;
+  background: var(--frame-bg);
+  box-shadow: 0 20px 60px var(--shadow), 0 4px 16px rgba(0,0,0,.3), 0 0 0 1px var(--border);
+  width: clamp(200px, 22vw, 320px);
+  display: flex; flex-direction: column;
+  transition: background .35s, box-shadow .4s, transform .4s cubic-bezier(.16,1,.3,1);
+  cursor: pointer;
 }
-.cat-card:last-child { border-bottom: none; }
-.cat-card:hover { flex: 1.35; }
+.cat-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 32px 80px var(--shadow), 0 8px 24px rgba(0,0,0,.35), 0 0 0 1px var(--border);
+}
+.cat-card::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+}
+[data-theme="light"] .cat-card::after { box-shadow: inset 0 1px 0 rgba(255,255,255,.5); }
 
-/* card background image (preview) */
-.cat-card-bg {
-  position: absolute; inset: -8%;
+/* preview image fills card */
+.cat-card-preview {
+  flex: 1; min-height: 180px;
   background-size: cover; background-position: center;
-  filter: brightness(.12) saturate(.25);
-  transition: filter .5s, transform .55s cubic-bezier(.16,1,.3,1);
+  filter: brightness(.55) saturate(.4);
+  transition: filter .5s;
+  position: relative;
 }
-.cat-card-bg.gradient-a {
-  background: radial-gradient(ellipse at 40% 60%, rgba(247,37,133,.1) 0%, transparent 65%), var(--bg-main);
+.cat-card-preview.no-preview {
+  background: var(--wall3);
+  display: flex; align-items: center; justify-content: center;
   filter: none;
 }
-.cat-card-bg.gradient-b {
-  background: radial-gradient(ellipse at 60% 40%, rgba(247,37,133,.07) 0%, transparent 65%), var(--bg-main);
-  filter: none;
+.cat-card-preview.no-preview::after {
+  content: '—'; font-family: 'DM Mono', monospace;
+  font-size: 1.5rem; color: var(--text3); letter-spacing: .2em;
 }
-.cat-card:hover .cat-card-bg { filter: brightness(.22) saturate(.45); transform: scale(1.04); }
+.cat-card:hover .cat-card-preview { filter: brightness(.75) saturate(.6); }
 
-.cat-card-vignette {
-  position: absolute; inset: 0; z-index: 1;
-  background: linear-gradient(to top, rgba(0,0,0,.75) 0%, transparent 55%);
-}
-[data-theme="light"] .cat-card-vignette {
-  background: linear-gradient(to top, rgba(0,0,0,.55) 0%, transparent 55%);
-}
-
-.cat-card-content { position: relative; z-index: 2; display: flex; flex-direction: column; gap: .4rem; }
-.cat-card-index {
-  font-family: 'DM Mono', monospace; font-size: .6rem;
-  letter-spacing: .2em; text-transform: uppercase; color: var(--pink);
+/* bottom label strip — identical to pic-mount-label */
+.cat-card-label {
+  height: 54px; display: flex; flex-direction: column;
+  justify-content: center; padding: 0 1.1rem;
+  border-top: 1px solid var(--border); gap: .2rem;
+  flex-shrink: 0;
 }
 .cat-card-title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: clamp(2.2rem, 4.5vw, 5rem);
-  letter-spacing: .03em; line-height: .9;
-  color: var(--text); transition: color .3s;
+  font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem;
+  letter-spacing: .08em; color: var(--text);
+  transition: color .25s; line-height: 1;
 }
-.cat-card:hover .cat-card-title { color: #fff; }
-[data-theme="light"] .cat-card:hover .cat-card-title { color: #fff; }
-
+.cat-card:hover .cat-card-title { color: var(--pink); }
 .cat-card-count {
-  font-family: 'DM Mono', monospace; font-size: .65rem;
-  color: var(--text3); letter-spacing: .08em;
+  font-family: 'DM Mono', monospace; font-size: .55rem;
+  letter-spacing: .1em; color: var(--text3); text-transform: uppercase;
 }
-.cat-card-arrow {
-  font-size: 1.1rem; color: var(--pink);
-  opacity: 0; transform: translateX(-6px);
-  transition: opacity .25s, transform .25s; margin-top: .25rem;
-}
-.cat-card:hover .cat-card-arrow { opacity: 1; transform: translateX(0); }
 
-/* footer */
-.cat-footer {
-  grid-column: 1 / -1; grid-row: 2;
-  border-top: 1px solid var(--border);
+/* footer — identical to gallery style */
+#cat-footer {
+  position: absolute; bottom: 0; left: 0; right: 0; z-index: 10;
   display: flex; justify-content: space-between; align-items: center;
-  padding: .85rem 3rem;
+  padding: .85rem 2.5rem;
+  background: linear-gradient(to top, var(--wall) 0%, transparent 100%);
+  transition: background .35s;
 }
 .cat-footer-l, .cat-footer-r {
   font-family: 'DM Mono', monospace; font-size: .56rem;
@@ -224,8 +253,7 @@ html, body {
 
 /* theme toggle */
 #theme-toggle {
-  background: none;
-  border: 1px solid var(--border);
+  background: none; border: 1px solid var(--border);
   border-radius: 20px; padding: .28rem .7rem;
   font-family: 'DM Mono', monospace; font-size: .56rem;
   letter-spacing: .12em; text-transform: uppercase;
@@ -233,6 +261,14 @@ html, body {
   transition: color .2s, border-color .2s;
 }
 #theme-toggle:hover { color: var(--text); border-color: var(--text3); }
+
+/* responsive */
+@media (max-width: 600px) {
+  .cat-cards { flex-direction: column; gap: 1.5rem; align-items: center; }
+  .cat-card { width: min(85vw, 320px); }
+  .cat-nameplate { padding: 1.5rem 2rem 3rem; }
+  #cat-bar, #cat-footer { padding: 1rem 1.5rem; }
+}
 
 /* ── 4. IMAGE GALLERY ── */
 #sc-gallery {
