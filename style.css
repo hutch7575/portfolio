@@ -81,12 +81,12 @@ html, body {
   flex-direction: column;
 }
 
-/* same texture as gallery */
+/* subtle texture — mild in both themes */
 #sc-cat::before {
   content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 0;
   background-image:
-    radial-gradient(ellipse at 15% 50%, rgba(0,0,0,.05) 0%, transparent 50%),
-    radial-gradient(ellipse at 85% 50%, rgba(0,0,0,.05) 0%, transparent 50%);
+    radial-gradient(ellipse at 15% 50%, rgba(0,0,0,.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 85% 50%, rgba(0,0,0,.03) 0%, transparent 50%);
 }
 /* same edge fade as gallery */
 #sc-cat::after {
@@ -143,7 +143,7 @@ html, body {
 .cat-nameplate {
   flex: 1.1; min-width: 0;
   background: var(--frame-bg);
-  padding: 2.5rem 2.5rem 3.5rem;
+  padding: 2.5rem;
   box-shadow: 0 20px 60px var(--shadow), 0 4px 16px rgba(0,0,0,.3), 0 0 0 1px var(--border);
   position: relative;
   transition: background .35s, box-shadow .35s;
@@ -166,22 +166,9 @@ html, body {
   color: var(--text); display: block;
 }
 .cat-nameplate-name span { color: var(--pink); }
-.cat-nameplate-sub {
-  display: block; margin-top: 1rem;
-  font-size: .8rem; color: var(--text3);
-  font-weight: 300; letter-spacing: .03em; line-height: 1.7;
-}
+
 /* label strip — identical to pic-mount-label */
-.cat-nameplate-label {
-  position: absolute; bottom: 0; left: 0; right: 0; height: 42px;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 1.4rem; border-top: 1px solid var(--border);
-}
-.cat-nameplate-label span {
-  font-family: 'DM Mono', monospace; font-size: .55rem;
-  letter-spacing: .1em; text-transform: uppercase; color: var(--text3);
-}
-.cat-nameplate-label .dot { color: var(--pink); }
+
 
 /* ── CATEGORY CARDS ── */
 .cat-cards {
@@ -314,8 +301,8 @@ html, body {
 #sc-gallery::before {
   content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 0;
   background-image:
-    radial-gradient(ellipse at 12% 50%, rgba(0,0,0,.05) 0%, transparent 50%),
-    radial-gradient(ellipse at 88% 50%, rgba(0,0,0,.05) 0%, transparent 50%);
+    radial-gradient(ellipse at 12% 50%, rgba(0,0,0,.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 88% 50%, rgba(0,0,0,.03) 0%, transparent 50%);
 }
 #sc-gallery::after {
   content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none;
@@ -434,8 +421,8 @@ html, body {
 #sc-tv::before {
   content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 0;
   background-image:
-    radial-gradient(ellipse at 12% 50%, rgba(0,0,0,.05) 0%, transparent 50%),
-    radial-gradient(ellipse at 88% 50%, rgba(0,0,0,.05) 0%, transparent 50%);
+    radial-gradient(ellipse at 12% 50%, rgba(0,0,0,.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 88% 50%, rgba(0,0,0,.03) 0%, transparent 50%);
 }
 #sc-tv::after {
   content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none;
