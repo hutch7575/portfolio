@@ -17,47 +17,58 @@
 
   <div id="cat-spot"></div>
 
+  <!-- top bar -->
   <div id="cat-bar">
     <span class="cat-bar-logo">JW™</span>
-    <button id="theme-toggle"><span class="icon">☽</span><span id="theme-label">Light</span></button>
+    <button id="theme-toggle">
+      <span class="icon">☽</span>
+      <span id="theme-label">Light</span>
+    </button>
   </div>
 
-  <div class="cat-wall-content">
+  <!-- centred content -->
+  <div class="cat-main">
+    <div class="cat-layout">
 
-    <!-- name plate — mounted on the wall -->
-    <div class="cat-nameplate">
-      <span class="cat-nameplate-eyebrow">Graphic Design Portfolio</span>
-      <span class="cat-nameplate-name">Josh Walls<span>.</span></span>
-      <span class="cat-nameplate-sub">Branding · Packaging · Print · Visual Identity</span>
-      <div style="padding-bottom:40px"></div>
-      <div class="cat-nameplate-label">
-        <span>Based in the UK</span>
-        <span class="dot">Est. 2026</span>
-      </div>
-    </div>
-
-    <!-- category cards — same mount treatment -->
-    <div class="cat-cards">
-
-      <div class="cat-card" id="zone-img">
-        <div class="cat-card-preview no-preview" id="cat-bg-images"></div>
-        <div class="cat-card-label">
-          <span class="cat-card-title">Images</span>
-          <span class="cat-card-count" id="cat-img-count">Loading…</span>
+      <!-- name plate -->
+      <div class="cat-nameplate">
+        <span class="cat-nameplate-eyebrow">Graphic Design Portfolio</span>
+        <span class="cat-nameplate-name">Josh Walls<span>.</span></span>
+        <span class="cat-nameplate-sub">Branding · Packaging · Print · Visual Identity</span>
+        <div class="cat-nameplate-label">
+          <span>Based in the UK</span>
+          <span class="dot">Est. 2026</span>
         </div>
       </div>
 
-      <div class="cat-card" id="zone-vid">
-        <div class="cat-card-preview no-preview" id="cat-bg-videos"></div>
-        <div class="cat-card-label">
-          <span class="cat-card-title">Videos</span>
-          <span class="cat-card-count" id="cat-vid-count">Loading…</span>
-        </div>
-      </div>
+      <!-- category cards -->
+      <div class="cat-cards">
 
+        <div class="cat-card" id="zone-img">
+          <div class="cat-card-preview no-preview" id="cat-bg-images"></div>
+          <div class="cat-card-body">
+            <span class="cat-card-index">01 —</span>
+            <span class="cat-card-title">Images</span>
+            <span class="cat-card-count" id="cat-img-count">Loading…</span>
+          </div>
+          <span class="cat-card-arrow">→</span>
+        </div>
+
+        <div class="cat-card" id="zone-vid">
+          <div class="cat-card-preview no-preview" id="cat-bg-videos"></div>
+          <div class="cat-card-body">
+            <span class="cat-card-index">02 —</span>
+            <span class="cat-card-title">Videos</span>
+            <span class="cat-card-count" id="cat-vid-count">Loading…</span>
+          </div>
+          <span class="cat-card-arrow">→</span>
+        </div>
+
+      </div>
     </div>
   </div>
 
+  <!-- footer -->
   <div id="cat-footer">
     <span class="cat-footer-l">© 2026 Josh Walls</span>
     <span class="cat-footer-r">Built with <span>Claude</span> · Anthropic</span>
