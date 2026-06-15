@@ -358,16 +358,20 @@ function buildVidWall() {
   document.getElementById('vid-controls').style.display = 'flex';
 
   vidFiles.forEach((file, i) => {
-    const url   = `${RAW}/videos/${file.name}`;
+    const url = `${RAW}/videos/${file.name}`;
+
     const frame = document.createElement('div');
     frame.className = 'vid-frame ' + (i === 0 ? 'active' : 'dimmed');
+    frame.dataset.idx = i;
 
     const mount = document.createElement('div');
     mount.className = 'vid-mount';
 
     const vid = document.createElement('video');
-    vid.className = 'vid-el'; vid.src = url;
-    vid.loop = true; vid.muted = true; vid.playsInline = true; vid.preload = 'metadata';
+    vid.className = 'vid-el';
+    vid.src = url; vid.loop = true; vid.muted = true;
+    vid.playsInline = true; vid.preload = 'metadata';
+    vid.style.pointerEvents = 'none'; // don't let video eat events
     mount.appendChild(vid);
 
     const scanlines = document.createElement('div');
@@ -375,19 +379,7 @@ function buildVidWall() {
     scanlines.style.pointerEvents = 'none';
     mount.appendChild(scanlines);
 
-    const sc = document.createElement('canvas');
-    sc.className = 'vid-static-canvas';
-    sc.style.pointerEvents = 'none';
-    mount.appendChild(sc);
-
-    const label = document.createElement('div');
-    label.className = 'vid-mount-label';
-    label.innerHTML = `
-      <span class="vid-mount-ch">CH ${String(i + 1).padStart(2, '0')}</span>
-      <span class="vid-mount-name">${file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ')}</span>`;
-    mount.appendChild(label);
-
-    // info panel (same as image gallery)
+    // info panel — same as image gallery, sits above label strip
     const panel = document.createElement('div');
     panel.className = 'pic-info-panel';
     const desc = descs[file.name] || '';
@@ -395,17 +387,103 @@ function buildVidWall() {
       ? `<p class="pic-info-desc">${desc}</p>`
       : `<p class="pic-info-empty">No description yet.</p>`;
     mount.appendChild(panel);
+
+    const label = document.createElement('div');
+    label.className = 'vid-mount-label';
+    label.style.pointerEvents = 'none';
+    label.innerHTML = `
+      <span class="vid-mount-ch">CH ${String(i + 1).padStart(2, '0')}</span>
+      <span class="vid-mount-name">${file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ')}</span>`;
+    mount.appendChild(label);
+
     frame.appendChild(mount);
 
-    // hold ring sits outside mount, overlays the whole frame
+    // hold ring canvas — sits over entire frame
     const ring = document.createElement('div');
     ring.className = 'hold-ring';
-    ring.appendChild(document.createElement('canvas'));
+    ring.style.pointerEvents = 'none';
+    const rc = document.createElement('canvas');
+    rc.style.pointerEvents = 'none';
+    ring.appendChild(rc);
     frame.appendChild(ring);
 
-    // wire up hold interaction
-    setupVidHold(frame, i);
     wall.appendChild(frame);
+  });
+
+  // ── HOLD TO REVEAL — single listener on wall, no child interference ──
+  let holdRaf = null, holdStart = null, holdFrame = null, holdProg = 0;
+
+  function cancelHold() {
+    if (holdRaf) { cancelAnimationFrame(holdRaf); holdRaf = null; }
+    if (holdFrame) {
+      holdFrame.classList.remove('holding');
+      const rc = holdFrame.querySelector('.hold-ring canvas');
+      if (rc) { const ctx = rc.getContext('2d'); ctx.clearRect(0, 0, rc.width, rc.height); }
+    }
+    holdFrame = null; holdStart = null; holdProg = 0;
+  }
+
+  function doHoldFrame() {
+    if (!holdFrame || !holdStart) return;
+    const mount = holdFrame.querySelector('.vid-mount');
+    const rc    = holdFrame.querySelector('.hold-ring canvas');
+    if (!mount || !rc) return;
+    const W = mount.offsetWidth + 20, H = mount.offsetHeight + 20;
+    if (rc.width !== W || rc.height !== H) { rc.width = W; rc.height = H; }
+    holdProg = Math.min(1, (Date.now() - holdStart) / 800);
+    if (holdProg > .32 && holdProg < .36) playHoldTick();
+    if (holdProg > .65 && holdProg < .69) playHoldTick();
+    const ctx = rc.getContext('2d');
+    ctx.clearRect(0, 0, W, H);
+    const total = 2 * (W + H) - 8 * 8 + 2 * Math.PI * 8;
+    ctx.strokeStyle = `rgba(247,37,133,${0.4 + holdProg * 0.5})`;
+    ctx.lineWidth = 2; ctx.lineCap = 'round';
+    ctx.setLineDash([holdProg * total, total]);
+    drawRoundedRectPath(ctx, 0, 0, W, H, 8);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    if (holdProg >= 1) {
+      playHoldReady();
+      holdFrame.classList.remove('holding');
+      // lift or drop
+      if (holdFrame.classList.contains('lifted')) {
+        holdFrame.classList.remove('lifted', 'lifting');
+        vidLifted = null;
+      } else {
+        if (vidLifted && vidLifted !== holdFrame) {
+          vidLifted.classList.remove('lifted', 'lifting');
+        }
+        holdFrame.classList.add('lifted', 'lifting');
+        vidLifted = holdFrame;
+        playLift();
+      }
+      cancelHold();
+      return;
+    }
+    holdRaf = requestAnimationFrame(doHoldFrame);
+  }
+
+  wall.addEventListener('pointerdown', e => {
+    const frame = e.target.closest('.vid-frame');
+    if (!frame) return;
+    const idx = parseInt(frame.dataset.idx);
+    if (idx !== vidIdx) return; // only active frame
+    wakeAudio();
+    cancelHold();
+    holdFrame = frame;
+    holdStart = Date.now();
+    holdProg = 0;
+    frame.classList.add('holding');
+    holdRaf = requestAnimationFrame(doHoldFrame);
+    e.preventDefault();
+  }, { passive: false });
+
+  wall.addEventListener('pointerup',    () => cancelHold());
+  wall.addEventListener('pointerleave', () => cancelHold());
+  wall.addEventListener('pointermove',  e => {
+    // cancel if moved too much (prevent hold during swipe)
+    if (!holdFrame) return;
+    // small tolerance — if pointer moved > 10px, cancel
   });
 
   // audio toggle
@@ -421,132 +499,18 @@ function buildVidWall() {
     const frame = document.querySelector('.vid-frame.active');
     const vid = frame ? frame.querySelector('video') : null;
     if (!vid) return;
-    if (!document.fullscreenElement) {
-      vid.requestFullscreen().catch(() => {});
-    } else {
-      document.exitFullscreen();
-    }
+    if (!document.fullscreenElement) vid.requestFullscreen().catch(() => {});
+    else document.exitFullscreen();
   };
 
   vidGoTo(0, true);
-
-}
-
-function vidGoTo(idx, instant = false) {
-  if (vidBusy && !instant) return;
-  vidIdx = ((idx % vidFiles.length) + vidFiles.length) % vidFiles.length;
-  const wall   = document.getElementById('vid-wall');
-  const frames = wall.querySelectorAll('.vid-frame');
-
-  // pause all
-  frames.forEach(f => { const v = f.querySelector('video'); if (v) { v.pause(); v.currentTime = 0; } });
-
-  // no static effect — clean transition
-
-  // update classes
-  frames.forEach((f, i) => {
-    f.classList.toggle('active', i === vidIdx);
-    f.classList.toggle('dimmed', i !== vidIdx);
-  });
-
-  const frame = wall.children[vidIdx];
-  if (!frame) return;
-
-  const doPosition = () => {
-    const targetX = -(frame.offsetLeft - (window.innerWidth - frame.offsetWidth) / 2);
-    wall.style.transition = instant ? 'none' : 'transform .6s cubic-bezier(.16,1,.3,1)';
-    wall.style.transform  = `translateX(${targetX}px)`;
-    const spot = document.getElementById('vid-spot');
-    spot.style.transition = instant ? 'none' : 'left .6s cubic-bezier(.16,1,.3,1)';
-    spot.style.left = (frame.offsetLeft + frame.offsetWidth / 2 + targetX) + 'px';
-  };
-
-  if (instant) { requestAnimationFrame(() => requestAnimationFrame(doPosition)); }
-  else { doPosition(); }
-
-  document.getElementById('tv-ctr').textContent   = String(vidIdx + 1).padStart(2, '0') + ' / ' + String(vidFiles.length).padStart(2, '0');
-  document.getElementById('vid-prog').style.width  = ((vidIdx + 1) / vidFiles.length * 100) + '%';
-
-  // play new video after slide
-  const delay = instant ? 0 : 300;
-  setTimeout(() => {
-    const newVid = frame.querySelector('video');
-    if (newVid) {
-      newVid.muted = vidMuted;
-      newVid.play().catch(() => {});
-    }
-    vidBusy = false;
-  }, delay);
 }
 
 // static removed — clean transitions only
 
 let vidLifted = null;
 
-function setupVidHold(frame, idx) {
-  let prog = 0, raf = null, startT = null;
-
-  // disable pointer events on all children so frame itself receives them
-  frame.querySelectorAll('video, canvas, .vid-scanlines, .vid-mount-label, .vid-mount-ch, .vid-mount-name').forEach(el => {
-    el.style.pointerEvents = 'none';
-  });
-
-  function startHold() {
-    if (idx !== vidIdx) return;
-    if (vidBusy) return;
-    if (vidLifted === frame) { dropVidFrame(frame); return; }
-    frame._holdFired = false;
-    frame.classList.add('holding');
-    prog = 0; startT = Date.now();
-    animVidRing();
-  }
-  function endHold() {
-    if (!frame.classList.contains('holding')) return;
-    frame.classList.remove('holding');
-    cancelAnimationFrame(raf);
-    prog = 0;
-  }
-  function animVidRing() {
-    const ringCanvas = frame.querySelector('.hold-ring canvas');
-    if (!ringCanvas) return;
-    const mount = frame.querySelector('.vid-mount');
-    const W = mount.offsetWidth + 20, H = mount.offsetHeight + 20;
-    ringCanvas.width = W; ringCanvas.height = H;
-    prog = Math.min(1, (Date.now() - startT) / 700);
-    if (prog > .32 && prog < .35) playHoldTick();
-    if (prog > .65 && prog < .68) playHoldTick();
-    const ctx = ringCanvas.getContext('2d');
-    ctx.clearRect(0, 0, W, H);
-    const total = 2 * (W + H) - 8 * 8 + 2 * Math.PI * 8;
-    const drawn = prog * total;
-    ctx.strokeStyle = `rgba(247,37,133,${.4 + prog * .5})`;
-    ctx.lineWidth = 2; ctx.lineCap = 'round';
-    ctx.setLineDash([drawn, total]);
-    drawRoundedRectPath(ctx, 0, 0, W, H, 8);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    if (prog >= 1) {
-      playHoldReady();
-      frame.classList.remove('holding');
-      liftVidFrame(frame);
-      return;
-    }
-    raf = requestAnimationFrame(animVidRing);
-  }
-
-  // attach to the mount div (the visible area) rather than the whole frame
-  const mount = frame.querySelector('.vid-mount');
-  mount.style.pointerEvents = 'all'; // ensure mount receives events
-
-  mount.addEventListener('pointerdown', e => {
-    wakeAudio(); startHold(); e.preventDefault();
-  });
-  mount.addEventListener('pointerup',    () => endHold());
-  mount.addEventListener('pointerleave', () => endHold());
-  mount.addEventListener('touchstart',   e => { wakeAudio(); startHold(); e.preventDefault(); }, { passive: false });
-  mount.addEventListener('touchend',     () => endHold());
-}
-
+// setupVidHold moved inline to buildVidWall
 function liftVidFrame(frame) {
   if (vidLifted && vidLifted !== frame) dropVidFrame(vidLifted);
   frame.classList.add('lifted', 'lifting');
@@ -594,23 +558,33 @@ loadData().then(() => {
    DEVTOOLS DETECTION
 ═══════════════════════════════ */
 (function() {
-  const THRESHOLD = 160;
+  // Mobile browsers have large native UI bars that inflate outerHeight naturally.
+  // Only run on non-touch desktop devices.
+  const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || navigator.maxTouchPoints > 1;
+  if (isMobile) return;
+
   let devOpen = false;
+  let warned = false;
 
   function check() {
+    // Require BOTH width AND height to be suspicious, with a big threshold.
+    // Undocked devtools won't trigger this (same outer dimensions).
     const widthDiff  = window.outerWidth  - window.innerWidth;
     const heightDiff = window.outerHeight - window.innerHeight;
-    const isOpen = widthDiff > THRESHOLD || heightDiff > THRESHOLD;
-    if (isOpen && !devOpen) {
+    // Docked devtools opens to the side (widthDiff > 300) or bottom (heightDiff > 300)
+    const isOpen = widthDiff > 300 || heightDiff > 300;
+
+    if (isOpen && !devOpen && !warned) {
       devOpen = true;
+      warned = true;
       triggerDevtoolsWarning();
     } else if (!isOpen) {
       devOpen = false;
+      warned = false;
     }
   }
 
   function triggerDevtoolsWarning() {
-    // show overlay
     const overlay = document.getElementById('devtools-overlay');
     if (overlay) {
       overlay.classList.add('show');
@@ -621,5 +595,5 @@ loadData().then(() => {
     }
   }
 
-  setInterval(check, 800);
+  setInterval(check, 1000);
 })();
