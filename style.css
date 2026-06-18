@@ -589,3 +589,10 @@ img, video {
   -webkit-user-select: none;
   user-select: none;
 }
+
+#version-tag {
+  color: var(--text3);
+  opacity: .55;
+  margin-left: .4rem;
+  font-size: .9em;
+}
