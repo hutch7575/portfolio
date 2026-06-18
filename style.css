@@ -415,6 +415,7 @@ html, body {
   opacity: 0; pointer-events: none;
 }
 .pic-frame.lifted .pic-info-panel { transform: translateY(0); opacity: 1; pointer-events: all; }
+.vid-frame.lifted .pic-info-panel { transform: translateY(0); opacity: 1; pointer-events: all; }
 .pic-info-desc  { font-size: .78rem; color: var(--text2); line-height: 1.65; font-weight: 300; margin-bottom: .5rem; }
 .pic-info-empty { font-family: 'DM Mono', monospace; font-size: .6rem; letter-spacing: .1em; color: var(--text3); font-style: italic; }
 
