@@ -297,6 +297,64 @@ function setupHold(frame, idx) {
   frame.addEventListener('pointerleave', endHold);
 }
 
+function setupVidHold(frame, idx) {
+  let prog = 0, raf = null, startT = null;
+
+  function startHold() {
+    if (idx !== vidIdx) return; // only the active frame can be held
+    if (vidLifted === frame) { dropVidFrame(frame); return; }
+    frame.classList.add('holding');
+    prog = 0; startT = Date.now();
+    animRing();
+  }
+
+  function endHold() {
+    if (!frame.classList.contains('holding')) return;
+    frame.classList.remove('holding');
+    cancelAnimationFrame(raf);
+    if (prog < 1) prog = 0;
+  }
+
+  function animRing() {
+    const ringCanvas = frame.querySelector('.hold-ring canvas');
+    if (!ringCanvas) return;
+    const mount = frame.querySelector('.vid-mount');
+    const W = mount.offsetWidth + 20, H = mount.offsetHeight + 20;
+    ringCanvas.width = W; ringCanvas.height = H;
+    prog = Math.min(1, (Date.now() - startT) / 700);
+    if (prog > .32 && prog < .35) playHoldTick();
+    if (prog > .65 && prog < .68) playHoldTick();
+    const ctx = ringCanvas.getContext('2d');
+    ctx.clearRect(0, 0, W, H);
+    const total = 2 * (W + H) - 8 * 8 + 2 * Math.PI * 8;
+    const drawn = prog * total;
+    ctx.strokeStyle = `rgba(247,37,133,${.4 + prog * .5})`;
+    ctx.lineWidth = 2; ctx.lineCap = 'round';
+    ctx.setLineDash([drawn, total]);
+    drawRoundedRectPath(ctx, 0, 0, W, H, 8);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    if (prog >= 1) {
+      playHoldReady();
+      frame.classList.remove('holding');
+      liftVidFrame(frame);
+      return;
+    }
+    raf = requestAnimationFrame(animRing);
+  }
+
+  frame.addEventListener('pointerdown',  e => { wakeAudio(); startHold(); e.preventDefault(); });
+  frame.addEventListener('pointerup',    endHold);
+  frame.addEventListener('pointerleave', endHold);
+}
+
+function liftVidFrame(frame) {
+  if (vidLifted && vidLifted !== frame) dropVidFrame(vidLifted);
+  frame.classList.add('lifted', 'lifting');
+  vidLifted = frame;
+  playLift();
+}
+
 function drawRoundedRectPath(ctx, x, y, w, h, r) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
@@ -323,16 +381,6 @@ function dropFrame(frame) {
 
 /* ── 6. VIDEO GALLERY ── */
 let vidIdx = 0, vidBusy = false, vidLifted = null;
-let _vhRaf = null, _vhStart = null, _vhFrame = null, _vhProg = 0;
-function _vhCancel() {
-  if (_vhRaf) { cancelAnimationFrame(_vhRaf); _vhRaf = null; }
-  if (_vhFrame) {
-    _vhFrame.classList.remove('holding');
-    const rc = _vhFrame.querySelector('.hold-ring canvas');
-    if (rc) rc.getContext('2d').clearRect(0, 0, rc.width, rc.height);
-  }
-  _vhFrame = null; _vhStart = null; _vhProg = 0;
-}
 
 function openVideos() {
   buildVidWall();
@@ -402,61 +450,17 @@ function buildVidWall() {
     const ring = document.createElement('div');
     ring.className = 'hold-ring';
     ring.appendChild(document.createElement('canvas'));
-    frame.dataset.idx = i;
     frame.appendChild(ring);
+
+    // make every element inside the mount pass pointer events straight
+    // through to the frame, exactly like the image gallery does
+    mount.querySelectorAll('video, canvas, div, span').forEach(el => {
+      el.style.pointerEvents = 'none';
+    });
+
+    setupVidHold(frame, i);
     wall.appendChild(frame);
   });
-
-  // disable pointer events on children so hold reaches frame
-  wall.querySelectorAll('video, .vid-scanlines, .vid-static-canvas, .vid-mount-label').forEach(el => {
-    el.style.pointerEvents = 'none';
-  });
-
-  // ── VIDEO HOLD TO REVEAL ──
-  function _vhAnimate() {
-    if (!_vhFrame || !_vhStart) return;
-    const mount = _vhFrame.querySelector('.vid-mount');
-    const rc = _vhFrame.querySelector('.hold-ring canvas');
-    if (!mount || !rc) return;
-    const W = mount.offsetWidth + 20, H = mount.offsetHeight + 20;
-    if (rc.width !== W || rc.height !== H) { rc.width = W; rc.height = H; }
-    _vhProg = Math.min(1, (Date.now() - _vhStart) / 800);
-    if (_vhProg > .32 && _vhProg < .36) playHoldTick();
-    if (_vhProg > .65 && _vhProg < .69) playHoldTick();
-    const ctx = rc.getContext('2d');
-    ctx.clearRect(0, 0, W, H);
-    const total = 2 * (W + H) - 8 * 8 + 2 * Math.PI * 8;
-    ctx.strokeStyle = `rgba(247,37,133,${0.4 + _vhProg * 0.5})`;
-    ctx.lineWidth = 2; ctx.lineCap = 'round';
-    ctx.setLineDash([_vhProg * total, total]);
-    drawRoundedRectPath(ctx, 0, 0, W, H, 8);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    if (_vhProg >= 1) {
-      playHoldReady();
-      _vhFrame.classList.remove('holding');
-      if (_vhFrame.classList.contains('lifted')) {
-        _vhFrame.classList.remove('lifted', 'lifting'); vidLifted = null;
-      } else {
-        if (vidLifted) vidLifted.classList.remove('lifted', 'lifting');
-        _vhFrame.classList.add('lifted', 'lifting'); vidLifted = _vhFrame; playLift();
-      }
-      _vhCancel(); return;
-    }
-    _vhRaf = requestAnimationFrame(_vhAnimate);
-  }
-  wall.addEventListener('pointerdown', e => {
-    const frame = e.target.closest('.vid-frame');
-    if (!frame || parseInt(frame.dataset.idx) !== vidIdx) return;
-    wakeAudio(); _vhCancel();
-    _vhFrame = frame; _vhStart = Date.now();
-    frame.classList.add('holding');
-    _vhRaf = requestAnimationFrame(_vhAnimate);
-    e.preventDefault();
-  }, { passive: false });
-  wall.addEventListener('pointerup',    () => _vhCancel());
-  wall.addEventListener('pointercancel',() => _vhCancel());
-  wall.addEventListener('touchend',     () => _vhCancel());
 
   // audio toggle
   document.getElementById('vid-audio-btn').onclick = () => {
@@ -538,8 +542,8 @@ function vidGoTo(idx, instant = false) {
 // drop lifted frame on channel change
 const _origVidGoTo = vidGoTo;
 
-document.getElementById('vid-prev').addEventListener('click', () => { if(!vidBusy) { _vhCancel(); vidGoTo(vidIdx - 1); } });
-document.getElementById('vid-next').addEventListener('click', () => { if(!vidBusy) { _vhCancel(); vidGoTo(vidIdx + 1); } });
+document.getElementById('vid-prev').addEventListener('click', () => { if(!vidBusy) vidGoTo(vidIdx - 1); });
+document.getElementById('vid-next').addEventListener('click', () => { if(!vidBusy) vidGoTo(vidIdx + 1); });
 
 // channel switching via nav buttons and swipe only
 
