@@ -139,7 +139,7 @@ function openGallery() {
   buildWall();
   showScreen('sc-gallery');
   // small delay so display:block has taken effect before measuring
-  setTimeout(() => { galGoTo(0, true); showNavHint('gal-hint'); }, 50);
+  setTimeout(() => { galGoTo(0, true); showNavHint('gal-hint'); }, 300);
 }
 
 function buildWall() {
@@ -337,7 +337,7 @@ function _vhCancel() {
 function openVideos() {
   buildVidWall();
   showScreen('sc-tv');
-  setTimeout(() => { vidGoTo(0, true); showNavHint('vid-hint'); }, 50);
+  setTimeout(() => { vidGoTo(0, true); showNavHint('vid-hint'); }, 300);
 }
 
 let vidMuted = true; // tracks audio state
@@ -482,8 +482,14 @@ function buildVidWall() {
 
 }
 
+function dropVidFrame(frame) {
+  frame.classList.remove('lifted', 'lifting');
+  vidLifted = null;
+}
+
 function vidGoTo(idx, instant = false) {
   if (vidBusy && !instant) return;
+  if (vidLifted) dropVidFrame(vidLifted);
   vidIdx = ((idx % vidFiles.length) + vidFiles.length) % vidFiles.length;
   const wall   = document.getElementById('vid-wall');
   const frames = wall.querySelectorAll('.vid-frame');
@@ -543,7 +549,6 @@ document.getElementById('sc-tv').addEventListener('pointerdown', e => { vDS = e.
 document.getElementById('sc-tv').addEventListener('pointerup',   e => {
   if (!vDr) return; vDr = false;
   if (Math.abs(e.clientX - vDS) > 65) {
-    if (vidLifted) dropVidFrame(vidLifted);
     vidGoTo(e.clientX < vDS ? vidIdx + 1 : vidIdx - 1);
   }
   vDS = null;
