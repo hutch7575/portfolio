@@ -342,7 +342,7 @@ function setupHold(frame, idx) {
     const mount = frame.querySelector('.pic-mount');
     const W = mount.offsetWidth + 20, H = mount.offsetHeight + 20;
     ringCanvas.width = W; ringCanvas.height = H;
-    prog = Math.min(1, (Date.now() - startT) / 700);
+    prog = Math.min(1, (Date.now() - startT) / 550);
     if (prog > .32 && prog < .35) playHoldTick();
     if (prog > .65 && prog < .68) playHoldTick();
     const ctx = ringCanvas.getContext('2d');
@@ -389,7 +389,7 @@ function setupVidHold(frame, idx) {
     const mount = frame.querySelector('.vid-mount');
     const W = mount.offsetWidth + 20, H = mount.offsetHeight + 20;
     ringCanvas.width = W; ringCanvas.height = H;
-    prog = Math.min(1, (Date.now() - startT) / 700);
+    prog = Math.min(1, (Date.now() - startT) / 550);
     if (prog > .32 && prog < .35) playHoldTick();
     if (prog > .65 && prog < .68) playHoldTick();
     const ctx = ringCanvas.getContext('2d');
