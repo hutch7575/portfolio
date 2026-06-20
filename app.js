@@ -274,11 +274,18 @@ document.getElementById('gal-next').addEventListener('click', () => galGoTo(galI
     dragging = false;
     const endX = (e.changedTouches ? e.changedTouches[0].clientX : e.clientX);
     const dx = endX - startX;
+    // ignore tiny movements entirely — this was a tap/hold, not a drag.
+    // Don't touch navigation or lifted state at all.
+    if (Math.abs(dx) < 12) {
+      wall.style.transition = 'transform .55s cubic-bezier(.16,1,.3,1)';
+      wall.style.transform = `translateX(${baseTransform}px)`; // restore exact position
+      return;
+    }
     wall.style.transition = 'transform .55s cubic-bezier(.16,1,.3,1)';
     if (Math.abs(dx) > 55) {
       galGoTo(dx < 0 ? galIdx + 1 : galIdx - 1);
     } else {
-      galGoTo(galIdx); // snap back
+      wall.style.transform = `translateX(${baseTransform}px)`; // snap back, no lift reset
     }
   }
 
@@ -620,11 +627,16 @@ document.getElementById('vid-next').addEventListener('click', () => { if(!vidBus
     dragging = false;
     const endX = (e.changedTouches ? e.changedTouches[0].clientX : e.clientX);
     const dx = endX - startX;
+    if (Math.abs(dx) < 12) {
+      wall.style.transition = 'transform .55s cubic-bezier(.16,1,.3,1)';
+      wall.style.transform = `translateX(${baseTransform}px)`;
+      return;
+    }
     wall.style.transition = 'transform .55s cubic-bezier(.16,1,.3,1)';
     if (Math.abs(dx) > 55) {
       vidGoTo(dx < 0 ? vidIdx + 1 : vidIdx - 1);
     } else {
-      vidGoTo(vidIdx); // snap back
+      wall.style.transform = `translateX(${baseTransform}px)`;
     }
   }
 
