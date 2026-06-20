@@ -15,7 +15,7 @@ import { playWhoosh, playLift, playHoldTick, playHoldReady, playStaticBurst, pla
 const REPO    = 'hutch7575/portfolio';
 const BRANCH  = 'main';
 const API     = `https://api.github.com/repos/${REPO}/contents`;
-const RAW     = `https://raw.githubusercontent.com/${REPO}/${BRANCH}`;
+const RAW     = '.';
 const IMG_EXT = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif'];
 const VID_EXT = ['mp4', 'webm', 'mov', 'ogg'];
 const xExt    = f => f.split('.').pop().toLowerCase();
@@ -23,14 +23,9 @@ const xExt    = f => f.split('.').pop().toLowerCase();
 let imgFiles = [], vidFiles = [], descs = {};
 
 async function loadData() {
-  const [a, b, c] = await Promise.all([
-    fetch(`${API}/images`).then(r => r.ok ? r.json() : []).catch(() => []),
-    fetch(`${API}/videos`).then(r => r.ok ? r.json() : []).catch(() => []),
-    fetch(`${RAW}/descriptions.json?t=${Date.now()}`).then(r => r.ok ? r.json() : {}).catch(() => ({}))
-  ]);
-  imgFiles = a.filter(f => f.name && f.name !== '.gitkeep' && IMG_EXT.includes(xExt(f.name)));
-  vidFiles = b.filter(f => f.name && f.name !== '.gitkeep' && VID_EXT.includes(xExt(f.name)));
-  descs    = c || {};
+  imgFiles = [{name:'fop1.jpg'},{name:'fop2.jpg'},{name:'pouch_design.png'},{name:'pouch_design2.png'},{name:'publication_final.png'}];
+  vidFiles = [{name:'Full_Completed_Animation.mp4'}];
+  descs = await fetch('descriptions.json').then(r=>r.json()).catch(()=>({}));
   document.getElementById('cat-img-count').textContent = `${imgFiles.length} piece${imgFiles.length !== 1 ? 's' : ''}`;
   document.getElementById('cat-vid-count').textContent = `${vidFiles.length} piece${vidFiles.length !== 1 ? 's' : ''}`;
 
@@ -41,9 +36,29 @@ async function loadData() {
     bg.classList.remove('no-preview');
   }
   if (vidFiles.length) {
+    // CSS background-image can't render video files directly —
+    // use an actual <video> element, paused on its first frame, as the preview instead.
     const bg = document.getElementById('cat-bg-videos');
-    bg.style.backgroundImage = `url(${RAW}/videos/${vidFiles[0].name})`;
-    bg.classList.remove('no-preview');
+    bg.innerHTML = '';
+    const previewVid = document.createElement('video');
+    previewVid.muted = true;
+    previewVid.playsInline = true;
+    previewVid.preload = 'metadata';
+    previewVid.style.width = '100%';
+    previewVid.style.height = '100%';
+    previewVid.style.objectFit = 'cover';
+    previewVid.style.pointerEvents = 'none';
+    previewVid.addEventListener('loadedmetadata', () => {
+      previewVid.currentTime = Math.min(0.5, previewVid.duration / 4);
+      bg.classList.remove('no-preview');
+    }, { once: true });
+    previewVid.addEventListener('error', () => {
+      // playback unavailable for some reason — keep the placeholder instead of a blank box
+      bg.classList.add('no-preview');
+    }, { once: true });
+    bg.appendChild(previewVid);
+    previewVid.src = `${RAW}/videos/${vidFiles[0].name}`;
+    previewVid.load();
   }
 }
 
@@ -251,6 +266,10 @@ document.getElementById('gal-next').addEventListener('click', () => galGoTo(galI
 
   function dragStart(e) {
     if (e.target.closest('.gal-nav, #gal-back')) return;
+    // never start a drag on the active frame itself — let setupHold own that gesture entirely.
+    // dragging only ever applies to swiping between items, not interacting with the active one.
+    const activeFrame = wall.querySelector('.pic-frame.active');
+    if (activeFrame && activeFrame.contains(e.target)) return;
     startX = getX(e); startY = getY(e); dragging = true;
     isTouch = e.type === 'touchstart';
     const m = new DOMMatrix(getComputedStyle(wall).transform);
@@ -340,9 +359,10 @@ function setupHold(frame, idx) {
     raf = requestAnimationFrame(animRing);
   }
 
-  frame.addEventListener('pointerdown',  e => { wakeAudio(); startHold(); e.preventDefault(); });
-  frame.addEventListener('pointerup',    endHold);
-  frame.addEventListener('pointerleave', endHold);
+  frame.addEventListener('pointerdown',   e => { wakeAudio(); startHold(); e.preventDefault(); });
+  frame.addEventListener('pointerup',     endHold);
+  frame.addEventListener('pointerleave',  endHold);
+  frame.addEventListener('pointercancel', endHold);
 }
 
 function setupVidHold(frame, idx) {
@@ -391,9 +411,10 @@ function setupVidHold(frame, idx) {
     raf = requestAnimationFrame(animRing);
   }
 
-  frame.addEventListener('pointerdown',  e => { wakeAudio(); startHold(); e.preventDefault(); });
-  frame.addEventListener('pointerup',    endHold);
-  frame.addEventListener('pointerleave', endHold);
+  frame.addEventListener('pointerdown',   e => { wakeAudio(); startHold(); e.preventDefault(); });
+  frame.addEventListener('pointerup',     endHold);
+  frame.addEventListener('pointerleave',  endHold);
+  frame.addEventListener('pointercancel', endHold);
 }
 
 function liftVidFrame(frame) {
@@ -606,6 +627,8 @@ document.getElementById('vid-next').addEventListener('click', () => { if(!vidBus
 
   function dragStart(e) {
     if (e.target.closest('.vid-nav, #tv-back, #vid-controls')) return;
+    const activeFrame = wall.querySelector('.vid-frame.active');
+    if (activeFrame && activeFrame.contains(e.target)) return;
     startX = getX(e); startY = getY(e); dragging = true;
     const m = new DOMMatrix(getComputedStyle(wall).transform);
     baseTransform = m.m41;
