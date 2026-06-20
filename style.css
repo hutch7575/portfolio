@@ -214,6 +214,8 @@ html, body {
   filter: brightness(.5) saturate(.35);
   transition: filter .45s;
   border-right: 1px solid var(--border);
+  overflow: hidden; /* clips the preview <video> element to this box */
+  position: relative;
 }
 .cat-card-preview.no-preview {
   background: var(--wall3); filter: none;
