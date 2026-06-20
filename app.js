@@ -88,7 +88,7 @@ function startNavHint(id) {
   _hintTimer = setTimeout(() => {
     const el = document.getElementById(id);
     if (el) el.classList.add('show');
-  }, 4000);
+  }, 1000);
 }
 
 function stopNavHint() {
@@ -240,14 +240,55 @@ window.addEventListener('resize', () => {
 document.getElementById('gal-prev').addEventListener('click', () => galGoTo(galIdx - 1));
 document.getElementById('gal-next').addEventListener('click', () => galGoTo(galIdx + 1));
 
-// swipe
-let gDS = null, gDr = false;
-document.getElementById('sc-gallery').addEventListener('pointerdown', e => { gDS = e.clientX; gDr = true; });
-document.getElementById('sc-gallery').addEventListener('pointerup',   e => {
-  if (!gDr) return; gDr = false;
-  if (Math.abs(e.clientX - gDS) > 65) galGoTo(e.clientX < gDS ? galIdx + 1 : galIdx - 1);
-  gDS = null;
-});
+// drag / swipe navigation (mouse + touch)
+(function() {
+  const screen = document.getElementById('sc-gallery');
+  const wall = document.getElementById('gal-wall');
+  let startX = null, startY = null, dragging = false, baseTransform = 0, isTouch = false;
+
+  function getX(e) { return e.touches ? e.touches[0].clientX : e.clientX; }
+  function getY(e) { return e.touches ? e.touches[0].clientY : e.clientY; }
+
+  function dragStart(e) {
+    if (e.target.closest('.gal-nav, #gal-back')) return;
+    startX = getX(e); startY = getY(e); dragging = true;
+    isTouch = e.type === 'touchstart';
+    const m = new DOMMatrix(getComputedStyle(wall).transform);
+    baseTransform = m.m41;
+    wall.style.transition = 'none';
+  }
+
+  function dragMove(e) {
+    if (!dragging) return;
+    const dx = getX(e) - startX;
+    const dy = getY(e) - startY;
+    // only hijack horizontal drags; let vertical scroll/pinch through
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 8) {
+      if (e.cancelable) e.preventDefault();
+      wall.style.transform = `translateX(${baseTransform + dx}px)`;
+    }
+  }
+
+  function dragEnd(e) {
+    if (!dragging) return;
+    dragging = false;
+    const endX = (e.changedTouches ? e.changedTouches[0].clientX : e.clientX);
+    const dx = endX - startX;
+    wall.style.transition = 'transform .55s cubic-bezier(.16,1,.3,1)';
+    if (Math.abs(dx) > 55) {
+      galGoTo(dx < 0 ? galIdx + 1 : galIdx - 1);
+    } else {
+      galGoTo(galIdx); // snap back
+    }
+  }
+
+  screen.addEventListener('touchstart', dragStart, { passive: true });
+  screen.addEventListener('touchmove',  dragMove,  { passive: false });
+  screen.addEventListener('touchend',   dragEnd);
+  screen.addEventListener('pointerdown', e => { if (e.pointerType !== 'touch') dragStart(e); });
+  screen.addEventListener('pointermove', e => { if (e.pointerType !== 'touch') dragMove(e); });
+  screen.addEventListener('pointerup',   e => { if (e.pointerType !== 'touch') dragEnd(e); });
+})();
 
 /* ── 5. HOLD-TO-LIFT ── */
 function setupHold(frame, idx) {
@@ -547,16 +588,53 @@ document.getElementById('vid-next').addEventListener('click', () => { if(!vidBus
 
 // channel switching via nav buttons and swipe only
 
-// swipe
-let vDS = null, vDr = false;
-document.getElementById('sc-tv').addEventListener('pointerdown', e => { vDS = e.clientX; vDr = true; });
-document.getElementById('sc-tv').addEventListener('pointerup',   e => {
-  if (!vDr) return; vDr = false;
-  if (Math.abs(e.clientX - vDS) > 65) {
-    vidGoTo(e.clientX < vDS ? vidIdx + 1 : vidIdx - 1);
+// drag / swipe navigation (mouse + touch)
+(function() {
+  const screen = document.getElementById('sc-tv');
+  const wall = document.getElementById('vid-wall');
+  let startX = null, startY = null, dragging = false, baseTransform = 0;
+
+  function getX(e) { return e.touches ? e.touches[0].clientX : e.clientX; }
+  function getY(e) { return e.touches ? e.touches[0].clientY : e.clientY; }
+
+  function dragStart(e) {
+    if (e.target.closest('.vid-nav, #tv-back, #vid-controls')) return;
+    startX = getX(e); startY = getY(e); dragging = true;
+    const m = new DOMMatrix(getComputedStyle(wall).transform);
+    baseTransform = m.m41;
+    wall.style.transition = 'none';
   }
-  vDS = null;
-});
+
+  function dragMove(e) {
+    if (!dragging) return;
+    const dx = getX(e) - startX;
+    const dy = getY(e) - startY;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 8) {
+      if (e.cancelable) e.preventDefault();
+      wall.style.transform = `translateX(${baseTransform + dx}px)`;
+    }
+  }
+
+  function dragEnd(e) {
+    if (!dragging) return;
+    dragging = false;
+    const endX = (e.changedTouches ? e.changedTouches[0].clientX : e.clientX);
+    const dx = endX - startX;
+    wall.style.transition = 'transform .55s cubic-bezier(.16,1,.3,1)';
+    if (Math.abs(dx) > 55) {
+      vidGoTo(dx < 0 ? vidIdx + 1 : vidIdx - 1);
+    } else {
+      vidGoTo(vidIdx); // snap back
+    }
+  }
+
+  screen.addEventListener('touchstart', dragStart, { passive: true });
+  screen.addEventListener('touchmove',  dragMove,  { passive: false });
+  screen.addEventListener('touchend',   dragEnd);
+  screen.addEventListener('pointerdown', e => { if (e.pointerType !== 'touch') dragStart(e); });
+  screen.addEventListener('pointermove', e => { if (e.pointerType !== 'touch') dragMove(e); });
+  screen.addEventListener('pointerup',   e => { if (e.pointerType !== 'touch') dragEnd(e); });
+})();
 
 /* ── PREVENT LONG-PRESS SAVE IMAGE ON MOBILE ── */
 document.addEventListener('contextmenu', e => {
