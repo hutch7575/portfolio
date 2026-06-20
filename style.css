@@ -301,8 +301,7 @@ html, body {
   .cat-nameplate { padding: 1.5rem 1.5rem 2.75rem; }
   #cat-bar { padding: 1rem 1.25rem; }
   #cat-footer { padding: .75rem 1.25rem; flex-direction: column; gap: .5rem; align-items: flex-start; }
-  .cat-card-preview { width: 80px; height: auto; }
-  .cat-card-preview.no-preview { height: 80px; }
+  .cat-card-preview, .cat-card-preview.no-preview { display: none; } /* remove preview thumbnails on small screens entirely, including the placeholder */
 }
 
 /* ── 4. IMAGE GALLERY ── */
